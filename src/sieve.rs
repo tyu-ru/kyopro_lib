@@ -43,13 +43,13 @@ impl Sieve {
 
     pub fn factorization(&self, mut x: u64) -> RLE<u64> {
         if x == 0 {
-            panic!("0 is natural number");
+            panic!("0 isn't natural number");
         }
         if x == 1 {
             return RLE::from_slice(&[1]);
         }
         let mut res = RLE::new();
-        let y = crate::misc::ntz(x);
+        let y = x.trailing_zeros() as usize;
         x >>= y;
         if y != 0 {
             res.push_n(2, y);
