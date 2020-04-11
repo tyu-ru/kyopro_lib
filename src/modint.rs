@@ -10,7 +10,7 @@ pub struct ModInt<M: Modulation> {
 
 impl<M: Modulation> Clone for ModInt<M> {
     fn clone(&self) -> Self {
-        Self::from_modded(self.x)
+        Self::new_uncheck(self.x)
     }
 }
 impl<M: Modulation> Copy for ModInt<M> {}
@@ -24,7 +24,7 @@ impl<M: Modulation> ModInt<M> {
         }
     }
     #[inline]
-    fn from_modded(x: u64) -> Self {
+    pub fn new_uncheck(x: u64) -> Self {
         Self {
             x: x,
             phantom: std::marker::PhantomData,
@@ -106,7 +106,7 @@ fn ext_gcd(a: u64, b: u64) -> (i64, i64, u64) {
 
 impl<M: Modulation> ModInt<M> {
     pub fn pow(&self, mut n: u64) -> Self {
-        let mut res = Self::from_modded(1);
+        let mut res = Self::new_uncheck(1);
         let mut d = *self;
         while n != 0 {
             if n & 1 != 0 {
@@ -129,8 +129,8 @@ impl<M: Modulation> ModInt<M> {
 
     pub fn gen_factorial(n: u64) -> (Vec<Self>, Vec<Self>) {
         let n = n as usize;
-        let mut pos = vec![Self::from_modded(1); n + 1];
-        let mut neg = vec![Self::from_modded(1); n + 1];
+        let mut pos = vec![Self::new_uncheck(1); n + 1];
+        let mut neg = vec![Self::new_uncheck(1); n + 1];
         for i in 1..n {
             pos[i + 1] = pos[i] * Self::new(i as u64 + 1);
         }
@@ -140,6 +140,13 @@ impl<M: Modulation> ModInt<M> {
         }
 
         (pos, neg)
+    }
+    pub fn gen_inv(n: u64) -> Vec<Self> {
+        let mut res = vec![Self::new_uncheck(1); (n + 1) as usize];
+        for i in 2..=n {
+            res[i as usize] = Self::new_uncheck(M::MOD - M::MOD / i) * res[(M::MOD % i) as usize];
+        }
+        res
     }
 }
 
@@ -212,6 +219,14 @@ mod test {
     }
 
     #[test]
+    fn test_gen_inv() {
+        assert_eq!(
+            Mint::gen_inv(6).iter().map(|x| x.val()).collect::<Vec<_>>(),
+            &[1, 1, 4, 5, 2, 3, 6]
+        )
+    }
+
+    #[test]
     fn test_modint_factorial() {
         let (pos, neg) = Mint::gen_factorial(5);
         let pos = pos.iter().map(|x| x.val()).collect::<Vec<_>>();
@@ -220,3 +235,15 @@ mod test {
         assert_eq!(neg, &[1, 1, 4, 6, 5, 1]);
     }
 }
+
+pub struct F1_000_000_007;
+impl Modulation for F1_000_000_007 {
+    const MOD: u64 = 1_000_000_007;
+}
+pub type Mint1_000_000_007 = ModInt<F1_000_000_007>;
+
+pub struct F998_244_353;
+impl Modulation for F998_244_353 {
+    const MOD: u64 = 998_244_353;
+}
+pub type Mint998_244_353 = ModInt<F998_244_353>;
