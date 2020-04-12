@@ -24,6 +24,18 @@ impl<M: Modulation> ModInt<M> {
         }
     }
     #[inline]
+    pub fn from_signed(x: i64) -> Self {
+        let x = if x >= 0 {
+            x as u64 % M::MOD
+        } else {
+            (M::MOD as i64 + x % M::MOD as i64) as u64
+        };
+        Self {
+            x: x,
+            phantom: std::marker::PhantomData,
+        }
+    }
+    #[inline]
     pub fn new_uncheck(x: u64) -> Self {
         Self {
             x: x,
@@ -167,6 +179,9 @@ mod test {
         let y = x;
         assert_eq!(x.val(), 5);
         assert_eq!(y.val(), 5);
+
+        let z = Mint::from_signed(-2);
+        assert_eq!(z.val(), 5);
     }
     #[test]
     fn test_modint_add() {
