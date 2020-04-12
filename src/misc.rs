@@ -190,3 +190,32 @@ fn test_log2p1() {
     assert_eq!(1 << log2p1(8 - 1), 8);
     assert_eq!(1 << log2p1(9 - 1), 16);
 }
+
+pub fn next_permutation(p: &mut [usize]) -> bool {
+    if let Some(i) = (0..p.len() - 1).rev().filter(|&i| p[i] < p[i + 1]).next() {
+        let j = (0..p.len()).rev().filter(|&j| p[i] < p[j]).next().unwrap();
+        p.swap(i, j);
+        p[i + 1..].reverse();
+        true
+    } else {
+        p.reverse();
+        false
+    }
+}
+
+#[test]
+fn test_next_permutation() {
+    let mut a = [1, 2, 3];
+    assert_eq!(next_permutation(&mut a), true);
+    assert_eq!(a, [1, 3, 2]);
+    assert_eq!(next_permutation(&mut a), true);
+    assert_eq!(a, [2, 1, 3]);
+    assert_eq!(next_permutation(&mut a), true);
+    assert_eq!(a, [2, 3, 1]);
+    assert_eq!(next_permutation(&mut a), true);
+    assert_eq!(a, [3, 1, 2]);
+    assert_eq!(next_permutation(&mut a), true);
+    assert_eq!(a, [3, 2, 1]);
+    assert_eq!(next_permutation(&mut a), false);
+    assert_eq!(a, [1, 2, 3]);
+}
