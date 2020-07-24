@@ -1,5 +1,5 @@
 pub struct RLE<T> {
-    pub v: Vec<(T, usize)>,
+    v: Vec<(T, usize)>,
     len: usize,
 }
 
@@ -13,9 +13,13 @@ impl<T: std::cmp::PartialEq + Copy> RLE<T> {
         res
     }
 
+    pub fn v(&self) -> &Vec<(T, usize)> {
+        &self.v
+    }
     pub fn len(&self) -> usize {
         self.len
     }
+
     pub fn push(&mut self, x: T) {
         let l = self.v.len();
         if l == 0 || self.v[l - 1].0 != x {
@@ -33,6 +37,12 @@ impl<T: std::cmp::PartialEq + Copy> RLE<T> {
             self.v[l - 1].1 += n;
         }
         self.len += n;
+    }
+    pub fn push_zero(&mut self, x: T) {
+        let l = self.v.len();
+        if l == 0 || self.v[l - 1].0 != x {
+            self.v.push((x, 0));
+        }
     }
     pub fn extend_from_slice(&mut self, s: &[T]) {
         for x in s {
@@ -53,6 +63,13 @@ impl<T: std::cmp::PartialEq + Copy> RLE<T> {
             self.len -= 1;
             res
         }
+    }
+
+    pub fn first(&self)->Option<T> {
+        self.v.first().map(|(x,_)|*x)
+    }
+    pub fn last(&self)->Option<T> {
+        self.v.last().map(|(x,_)|*x)
     }
 }
 
@@ -88,4 +105,19 @@ fn test_rle() {
     let mut rle = RLE::<i32>::new();
     assert_eq!(rle.pop(), None);
     assert_eq!(rle.len(), 0);
+    rle.push_zero(3);
+    assert_eq!(rle.len(), 0);
+    assert_eq!(rle.v, &[(3, 0)]);
+    rle.push(3);
+    assert_eq!(rle.len(), 1);
+    assert_eq!(rle.v, &[(3, 1)]);
+    rle.push_zero(3);
+    assert_eq!(rle.len(), 1);
+    assert_eq!(rle.v, &[(3, 1)]);
+    rle.push_zero(2);
+    assert_eq!(rle.len(), 1);
+    assert_eq!(rle.v, &[(3, 1), (2, 0)]);
+    rle.push(3);
+    assert_eq!(rle.len(), 2);
+    assert_eq!(rle.v, &[(3, 1), (2, 0), (3, 1)]);
 }
