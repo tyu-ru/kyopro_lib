@@ -39,10 +39,10 @@ fn test_ntz() {
 }
 
 /// f(i) == true となる 最小のi
-pub fn lower_bound<I, F>(mut l: I, mut r: I, f: F) -> I
+pub fn lower_bound<I, F>(mut l: I, mut r: I, mut f: F) -> I
 where
     I: num::traits::PrimInt,
-    F: Fn(I) -> bool,
+    F: FnMut(I) -> bool,
 {
     while l != r {
         let m = l + ((r - l) >> 1);
