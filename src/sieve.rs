@@ -64,6 +64,9 @@ impl Sieve {
         }
         res
     }
+    pub fn primes(&self) -> &Vec<u64> {
+        &self.p
+    }
 }
 
 #[cfg(test)]
@@ -100,7 +103,7 @@ fn test_sieve() {
     test::test_primes(&Sieve::new(17));
 
     let s = Sieve::new(140);
-    assert_eq!(s.factorization(1).v, &[(1, 1)]);
-    assert_eq!(s.factorization(127).v, &[(127, 1)]);
-    assert_eq!(s.factorization(140).v, &[(2, 2), (5, 1), (7, 1)]);
+    assert_eq!(s.factorization(1).v(), &[(1, 1)]);
+    assert_eq!(s.factorization(127).v(), &[(127, 1)]);
+    assert_eq!(s.factorization(140).v(), &[(2, 2), (5, 1), (7, 1)]);
 }
