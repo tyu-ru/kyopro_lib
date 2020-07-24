@@ -219,3 +219,12 @@ fn test_next_permutation() {
     assert_eq!(next_permutation(&mut a), false);
     assert_eq!(a, [1, 2, 3]);
 }
+
+#[derive(PartialEq, PartialOrd)]
+pub struct Total<T>(pub T);
+impl<T: PartialEq> Eq for Total<T> {}
+impl<T: PartialOrd> Ord for Total<T> {
+    fn cmp(&self, other: &Total<T>) -> std::cmp::Ordering {
+        self.0.partial_cmp(&other.0).unwrap()
+    }
+}
