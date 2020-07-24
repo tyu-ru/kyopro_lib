@@ -15,6 +15,12 @@ impl<M: Modulation> Clone for ModInt<M> {
 }
 impl<M: Modulation> Copy for ModInt<M> {}
 
+impl<M: Modulation> std::fmt::Display for ModInt<M> {
+    fn fmt(&self, dest: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(dest, "{}", self.x)
+    }
+}
+
 impl<M: Modulation> ModInt<M> {
     #[inline]
     pub fn new(x: u64) -> Self {
@@ -45,6 +51,17 @@ impl<M: Modulation> ModInt<M> {
     #[inline]
     pub fn val(&self) -> u64 {
         self.x
+    }
+}
+
+impl<M: Modulation> std::ops::Neg for ModInt<M> {
+    type Output = Self;
+    #[inline]
+    fn neg(self) -> Self {
+        Self {
+            x: if self.x == 0 { 0 } else { M::MOD - self.x },
+            phantom: std::marker::PhantomData,
+        }
     }
 }
 
@@ -139,7 +156,7 @@ impl<M: Modulation> ModInt<M> {
         Self::new(x as u64)
     }
 
-    pub fn gen_factorial(n: u64) -> (Vec<Self>, Vec<Self>) {
+    pub fn gen_factorial(n: u64) -> Factorial<M> {
         let n = n as usize;
         let mut pos = vec![Self::new_uncheck(1); n + 1];
         let mut neg = vec![Self::new_uncheck(1); n + 1];
@@ -151,7 +168,7 @@ impl<M: Modulation> ModInt<M> {
             neg[i] = neg[i + 1] * Self::new(i as u64 + 1);
         }
 
-        (pos, neg)
+        Factorial { pos: pos, neg: neg }
     }
     pub fn gen_inv(n: u64) -> Vec<Self> {
         let mut res = vec![Self::new_uncheck(1); (n + 1) as usize];
@@ -159,6 +176,31 @@ impl<M: Modulation> ModInt<M> {
             res[i as usize] = Self::new_uncheck(M::MOD - M::MOD / i) * res[(M::MOD % i) as usize];
         }
         res
+    }
+}
+
+pub struct Factorial<M: Modulation> {
+    pos: Vec<ModInt<M>>,
+    neg: Vec<ModInt<M>>,
+}
+impl<M: Modulation> Factorial<M> {
+    pub fn permutation(&self, n: u64, r: u64) -> ModInt<M> {
+        if r > n {
+            ModInt::new(0)
+        } else {
+            self.pos[n as usize] * self.neg[(n - r) as usize]
+        }
+    }
+
+    pub fn binomial(&self, n: u64, r: u64) -> ModInt<M> {
+        if r > n {
+            ModInt::new(0)
+        } else {
+            self.pos[n as usize] * self.neg[r as usize] * self.neg[(n - r) as usize]
+        }
+    }
+    pub fn cmb_with_rep(&self, n: u64, r: u64) -> ModInt<M> {
+        self.binomial(n + r - 1, r)
     }
 }
 
@@ -243,11 +285,16 @@ mod test {
 
     #[test]
     fn test_modint_factorial() {
-        let (pos, neg) = Mint::gen_factorial(5);
-        let pos = pos.iter().map(|x| x.val()).collect::<Vec<_>>();
-        let neg = neg.iter().map(|x| x.val()).collect::<Vec<_>>();
+        let fac = Mint::gen_factorial(5);
+        let pos = fac.pos.iter().map(|x| x.val()).collect::<Vec<_>>();
+        let neg = fac.neg.iter().map(|x| x.val()).collect::<Vec<_>>();
         assert_eq!(pos, &[1, 1, 2, 6, 3, 1]);
         assert_eq!(neg, &[1, 1, 4, 6, 5, 1]);
+    }
+
+    #[test]
+    fn test_display() {
+        assert_eq!(format!("{}", Mint::new(3)), "3");
     }
 }
 
