@@ -4,5 +4,6 @@ pub mod modint;
 pub mod rle;
 pub mod segtree;
 pub mod sieve;
+pub mod string;
 pub mod tree;
 pub mod unionfind;
