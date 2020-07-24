@@ -19,14 +19,42 @@ pub fn grid(
     })
 }
 
+pub fn grid_4(
+    v: (usize, usize),
+    h: Range<usize>,
+    w: Range<usize>,
+) -> impl Iterator<Item = (usize, usize)> {
+    grid(v, &[(1, 0), (0, 1), (-1, 0), (0, -1)], h, w)
+}
+
+pub fn grid_8(
+    v: (usize, usize),
+    h: Range<usize>,
+    w: Range<usize>,
+) -> impl Iterator<Item = (usize, usize)> {
+    grid(
+        v,
+        &[
+            (1, 0),
+            (1, 1),
+            (0, 1),
+            (-1, 1),
+            (-1, 0),
+            (-1, -1),
+            (0, -1),
+            (1, -1),
+        ],
+        h,
+        w,
+    )
+}
+
 #[test]
 fn test_grid() {
-    assert_eq!(
-        grid((1, 1), &[(1, 0), (0, 1), (-1, 0), (0, -1)], 0..3, 0..3).collect::<Vec<_>>(),
-        &[(2, 1), (1, 2), (0, 1), (1, 0)]
+    use itertools::*;
+    assert_equal(
+        grid_4((1, 1), 0..3, 0..3),
+        vec![(2, 1), (1, 2), (0, 1), (1, 0)],
     );
-    assert_eq!(
-        grid((0, 1), &[(1, 0), (0, 1), (-1, 0), (0, -1)], 0..3, 0..3).collect::<Vec<_>>(),
-        &[(1, 1), (0, 2), (0, 0)]
-    );
+    assert_equal(grid_4((0, 1), 0..3, 0..3), vec![(1, 1), (0, 2), (0, 0)]);
 }
