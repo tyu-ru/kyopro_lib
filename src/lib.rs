@@ -7,3 +7,4 @@ pub mod sieve;
 pub mod string;
 pub mod tree;
 pub mod unionfind;
+pub mod grid;
