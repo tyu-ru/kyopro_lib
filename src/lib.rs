@@ -1,3 +1,4 @@
+pub mod bit;
 pub mod misc;
 pub mod modint;
 pub mod rle;
