@@ -19,9 +19,20 @@ where
             f: f,
         }
     }
+    pub fn get(&self, i: usize) -> &T {
+        &self.x[self.n + i - 1]
+    }
     pub fn update(&mut self, i: usize, x: T) {
         let mut i = self.n + i - 1;
         self.x[i] = x;
+        while i > 0 {
+            i = (i - 1) / 2;
+            self.x[i] = (self.f)(&self.x[i * 2 + 1], &self.x[i * 2 + 2]);
+        }
+    }
+    pub fn update_by<F2: Fn(&mut T)>(&mut self, i: usize, f: F2) {
+        let mut i = self.n + i - 1;
+        f(&mut self.x[i]);
         while i > 0 {
             i = (i - 1) / 2;
             self.x[i] = (self.f)(&self.x[i * 2 + 1], &self.x[i * 2 + 2]);
@@ -51,8 +62,11 @@ fn test_segtree() {
     st.update(1, 2);
     st.update(2, 3);
     st.update(3, 4);
+    assert_eq!(st.get(2), &3);
     assert_eq!(st.query(0..4), 10);
     assert_eq!(st.query(0..1), 1);
     assert_eq!(st.query(0..2), 3);
     assert_eq!(st.query(1..3), 5);
+    st.update_by(0, |x| *x += 2);
+    assert_eq!(st.query(0..4), 12);
 }
