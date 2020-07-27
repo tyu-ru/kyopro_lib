@@ -89,9 +89,10 @@ impl BitPattern {
     }
     #[inline]
     pub fn with_mask(n: usize, mask: u64) -> Self {
+        let mask = mask & ((1 << n) - 1);
         Self {
-            i: (1 << n) - 1,
-            mask: mask & ((1 << n) - 1),
+            i: mask,
+            mask: mask,
             end: n == 0,
         }
     }
@@ -129,6 +130,7 @@ fn test_bit_pattern() {
             0b10_0000, 0b10_0001, 0b10_0010, 0b10_0011, 0b10_1000, 0b10_1001, 0b10_1010, 0b10_1011,
         ]
     );
+    assert_eq!(BitPattern::with_mask(6, 0).collect::<Vec<_>>(), [0]);
 }
 
 pub struct BitIter {
