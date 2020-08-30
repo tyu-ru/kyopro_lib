@@ -1,5 +1,5 @@
 pub trait Modulation {
-    const MOD: u64 = 1_000_000_007;
+    const MOD: u64;
 }
 
 #[derive(PartialEq)]
@@ -53,6 +53,36 @@ impl<M: Modulation> ModInt<M> {
         self.x
     }
 }
+
+macro_rules! def_from_trait {
+    (u, $t:ty) => {
+        impl<M: Modulation> std::convert::From<$t> for ModInt<M> {
+            #[inline]
+            fn from(x: $t) -> Self {
+                Self::new(x as u64)
+            }
+        }
+    };
+    (i, $t:ty) => {
+        impl<M: Modulation> std::convert::From<$t> for ModInt<M> {
+            #[inline]
+            fn from(x: $t) -> Self {
+                Self::from_signed(x as i64)
+            }
+        }
+    };
+}
+
+def_from_trait!(u, u8);
+def_from_trait!(u, u16);
+def_from_trait!(u, u32);
+def_from_trait!(u, u64);
+def_from_trait!(u, usize);
+def_from_trait!(i, i8);
+def_from_trait!(i, i16);
+def_from_trait!(i, i32);
+def_from_trait!(i, i64);
+def_from_trait!(i, isize);
 
 impl<M: Modulation> std::ops::Neg for ModInt<M> {
     type Output = Self;
@@ -224,6 +254,11 @@ mod test {
 
         let z = Mint::from_signed(-2);
         assert_eq!(z.val(), 5);
+
+        let x = Mint::from(12);
+        assert_eq!(x.val(), 5);
+        let x = Mint::from(-2);
+        assert_eq!(x.val(), 5);
     }
     #[test]
     fn test_modint_add() {
