@@ -1,3 +1,37 @@
+use std::ops::Range;
+use std::ops::RangeBounds;
+fn bound_to_range<R: RangeBounds<usize>>(r1: R, r2: Range<usize>) -> Range<usize> {
+    use std::ops::Bound;
+    let s = match r1.start_bound() {
+        Bound::Included(&s) => s,
+        Bound::Excluded(&s) => s + 1,
+        Bound::Unbounded => r2.start,
+    };
+    let e = match r1.end_bound() {
+        Bound::Included(&e) => e + 1,
+        Bound::Excluded(&e) => e,
+        Bound::Unbounded => r2.end,
+    };
+    std::cmp::max(s, r2.start)..std::cmp::min(e, r2.end)
+}
+
+#[test]
+fn test_bound_to_range() {
+    assert_eq!(bound_to_range(1..3, 0..4), 1..3);
+    assert_eq!(bound_to_range(0..5, 1..4), 1..4);
+    assert_eq!(bound_to_range(.., 0..4), 0..4);
+    assert_eq!(bound_to_range(2.., 0..4), 2..4);
+    assert_eq!(bound_to_range(..3, 0..4), 0..3);
+    assert_eq!(bound_to_range(..=3, 0..4), 0..4);
+}
+
+fn is_overlap(r1: &Range<usize>, r2: &Range<usize>) -> bool {
+    !(r2.end <= r1.start || r1.end <= r2.start)
+}
+fn is_include(r1: &Range<usize>, r2: &Range<usize>) -> bool {
+    r1.start <= r2.start && r2.end <= r1.end
+}
+
 /// Segment Tree. Supports single element update and range query.
 ///
 /// (`T`, `f`) must be monoid with `id` as identity.
@@ -108,6 +142,14 @@ where
         &self.dat[self.n + i - 1]
     }
 
+    /// Extract a slice containing elements.
+    /// # Time complexity
+    /// Cost is `O(1)`.
+    #[inline]
+    pub fn as_slice(&self) -> &[T] {
+        &self.dat[self.n - 1..]
+    }
+
     /// Update element i.
     /// # Time complexity
     /// Cost is `O(log N)`.
@@ -140,29 +182,18 @@ where
     /// Range query
     /// # Time complexity
     /// Cost is `O(log N)`.
-    pub fn query<R: std::ops::RangeBounds<usize>>(&self, r: R) -> T {
-        use std::ops::Bound;
-        let s = match r.start_bound() {
-            Bound::Included(&s) => s,
-            Bound::Excluded(&s) => s + 1,
-            Bound::Unbounded => 0,
-        };
-        let e = match r.end_bound() {
-            Bound::Included(&e) => e + 1,
-            Bound::Excluded(&e) => e,
-            Bound::Unbounded => self.n,
-        };
-        self.query_impl(0, s..e, 0..self.n)
+    pub fn query<R: RangeBounds<usize>>(&self, r: R) -> T {
+        self.query_impl(0, &bound_to_range(r, 0..self.n), 0..self.n)
     }
-    fn query_impl(&self, k: usize, r: std::ops::Range<usize>, a: std::ops::Range<usize>) -> T {
-        if r.end <= a.start || a.end <= r.start {
+    fn query_impl(&self, k: usize, r: &Range<usize>, a: Range<usize>) -> T {
+        if !is_overlap(r, &a) {
             self.id.clone()
-        } else if r.start <= a.start && a.end <= r.end {
+        } else if is_include(r, &a) {
             self.dat[k].clone()
         } else {
             let m = (a.start + a.end) / 2;
             (self.f)(
-                &self.query_impl(k * 2 + 1, r.clone(), a.start..m),
+                &self.query_impl(k * 2 + 1, r, a.start..m),
                 &self.query_impl(k * 2 + 2, r, m..a.end),
             )
         }
@@ -174,13 +205,15 @@ fn test_segtree() {
     let mut st = SegTree::build_from_slice(&[1, 2, 3, 4, 5], 0, |&a, &b| a + b);
     assert_eq!(st.len(), 8);
     assert_eq!(st.get_element(2), &3);
+    assert_eq!(st.as_slice(), &[1, 2, 3, 4, 5, 0, 0, 0]);
     assert_eq!(st.query(1..4), 9);
+    assert_eq!(st.query(1..=4), 14);
     assert_eq!(st.query(..), 15);
     assert_eq!(st.query(..4), 10);
     assert_eq!(st.query(2..), 12);
-    assert_eq!(st.query(0..1), 1);
-    assert_eq!(st.query(0..2), 3);
-    assert_eq!(st.query(1..3), 5);
+    assert_eq!(st.query(0..0), 0);
+
     st.update_by(0, |dat| *dat += 2);
     assert_eq!(st.query(0..4), 12);
+    assert_eq!(st.as_slice(), &[3, 2, 3, 4, 5, 0, 0, 0]);
 }
