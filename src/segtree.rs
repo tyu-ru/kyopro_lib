@@ -217,3 +217,173 @@ fn test_segtree() {
     assert_eq!(st.query(0..4), 12);
     assert_eq!(st.as_slice(), &[3, 2, 3, 4, 5, 0, 0, 0]);
 }
+
+pub struct LazySegTree<T, U, F, G, H> {
+    n: usize,
+    id: T,
+    dat: Vec<T>,
+    lazy: Vec<Option<U>>,
+    f: F,
+    g: G,
+    h: H,
+}
+
+impl<T, U, F, G, H> LazySegTree<T, U, F, G, H>
+where
+    T: Clone,
+    U: Clone,
+    F: Fn(&T, &T) -> T,
+    G: Fn(&U, &U) -> U,
+    H: Fn(&T, &U, usize) -> T,
+{
+    pub fn new(n: usize, id: T, f: F, g: G, h: H) -> Self {
+        let n = n.next_power_of_two();
+        Self {
+            n: n,
+            id: id.clone(),
+            dat: vec![id; 2 * n - 1],
+            lazy: vec![None; 2 * n - 1],
+            f: f,
+            g: g,
+            h: h,
+        }
+    }
+    pub fn build_from_slice(dat: &[T], id: T, f: F, g: G, h: H) -> Self {
+        let mut lst = Self::new(dat.len(), id, f, g, h);
+        for i in 0..dat.len() {
+            lst.dat[lst.n - 1 + i] = dat[i].clone();
+        }
+        for i in (0..lst.n - 1).rev() {
+            lst.dat[i] = (lst.f)(&lst.dat[i * 2 + 1], &lst.dat[i * 2 + 2]);
+        }
+        lst
+    }
+    pub fn build_from_iter<I: Iterator<Item = T>>(iter: I, id: T, f: F, g: G, h: H) -> Self {
+        use itertools::Itertools;
+        Self::build_from_slice(&iter.collect_vec(), id, f, g, h)
+    }
+
+    pub fn len(&self) -> usize {
+        self.n
+    }
+
+    fn marge_effect(&mut self, k: usize, x: &U) {
+        if let Some(y) = self.lazy[k].take() {
+            self.lazy[k] = Some((self.g)(&y, x));
+        } else {
+            self.lazy[k] = Some(x.clone());
+        }
+    }
+    fn eval(&mut self, k: usize, l: usize) {
+        if let Some(x) = self.lazy[k].take() {
+            self.dat[k] = (self.h)(&self.dat[k], &x, l);
+            if k < self.n - 1 {
+                self.marge_effect(k * 2 + 1, &x);
+                self.marge_effect(k * 2 + 2, &x);
+            }
+        }
+    }
+
+    pub fn update_range<R: RangeBounds<usize>>(&mut self, r: R, x: U) {
+        self.update_range_impl(&bound_to_range(r, 0..self.n), 0, 0..self.n, &x)
+    }
+    fn update_range_impl(&mut self, r: &Range<usize>, k: usize, a: Range<usize>, x: &U) {
+        if !is_overlap(r, &a) {
+            self.eval(k, a.end - a.start);
+            return;
+        }
+        if is_include(r, &a) {
+            self.marge_effect(k, x);
+            self.eval(k, a.end - a.start);
+            return;
+        }
+        let m = (a.start + a.end) / 2;
+        self.eval(k, a.end - a.start);
+        self.update_range_impl(r, k * 2 + 1, a.start..m, x);
+        self.update_range_impl(r, k * 2 + 2, m..a.end, x);
+        self.dat[k] = (self.f)(&self.dat[k * 2 + 1], &self.dat[k * 2 + 2]);
+    }
+
+    pub fn query<R: RangeBounds<usize>>(&mut self, r: R) -> T {
+        self.query_impl(&bound_to_range(r, 0..self.n), 0, 0..self.n)
+    }
+    fn query_impl(&mut self, r: &Range<usize>, k: usize, a: Range<usize>) -> T {
+        if !is_overlap(r, &a) {
+            self.id.clone()
+        } else if is_include(r, &a) {
+            self.eval(k, a.end - a.start);
+            self.dat[k].clone()
+        } else {
+            let m = (a.start + a.end) / 2;
+            self.eval(k, a.end - a.start);
+            let x = self.query_impl(r, k * 2 + 1, a.start..m);
+            let y = self.query_impl(r, k * 2 + 2, m..a.end);
+            (self.f)(&x, &y)
+        }
+    }
+}
+
+#[test]
+fn test_lazysegtree() {
+    let mut lst = LazySegTree::build_from_slice(
+        &[1, 2, 3, 4, 5],
+        0,
+        |&a, &b| a + b,
+        |&a, &b| a + b,
+        |&a, &b, l| a + b * l as i32,
+    );
+    assert_eq!(lst.len(), 8);
+    assert_eq!(lst.query(1..4), 9);
+    assert_eq!(lst.query(..), 15);
+    assert_eq!(lst.query(..4), 10);
+    assert_eq!(lst.query(2..), 12);
+    assert_eq!(lst.query(0..0), 0);
+
+    lst.update_range(.., 1);
+    assert_eq!(lst.query(..), 23);
+    assert_eq!(lst.query(0..4), 14);
+
+    lst.update_range(.., -1);
+    lst.update_range(1..4, 2);
+    assert_eq!(lst.query(1..4), 15);
+    assert_eq!(lst.query(0..2), 5);
+}
+
+#[test]
+fn test_lazysegtree_stress() {
+    use rand::distributions::{Distribution, Uniform};
+    let n = 10_000;
+    let d = Uniform::from(0..n);
+    let d2 = Uniform::from(-(n as i64)..=n as i64);
+    let mut rng = rand::thread_rng();
+
+    let mut lst = LazySegTree::new(
+        n,
+        0,
+        |&a, &b| a + b,
+        |&a, &b| a + b,
+        |&a, &b, l| a + b * l as i64,
+    );
+    let mut stup = vec![0; n];
+
+    for _ in 0..n {
+        let mut a = d.sample(&mut rng);
+        let mut b = d.sample(&mut rng);
+        if a > b {
+            std::mem::swap(&mut a, &mut b);
+        }
+
+        let c = d2.sample(&mut rng);
+        for x in &mut stup[a..b] {
+            *x += c;
+        }
+        lst.update_range(a..b, c);
+
+        let mut a = d.sample(&mut rng);
+        let mut b = d.sample(&mut rng);
+        if a > b {
+            std::mem::swap(&mut a, &mut b);
+        }
+        assert_eq!(lst.query(a..b), stup[a..b].iter().sum());
+    }
+}
