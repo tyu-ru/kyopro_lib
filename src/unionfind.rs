@@ -1,40 +1,60 @@
-struct Node {
-    parent: usize,
-    size: usize,
+// use num_derive::{Num, NumOps, One, Zero};
+
+#[derive(Clone, Copy, PartialEq, PartialOrd)]
+struct Size(usize);
+#[derive(Clone, Copy)]
+struct Parent(usize);
+
+#[derive(Clone)]
+enum Node {
+    Root(Size),
+    Leaf(Parent),
+}
+
+struct RootInfo {
+    idx: usize,
+    size: Size,
 }
 
 pub struct UnionFind {
     node: Vec<Node>,
 }
+
 impl UnionFind {
     pub fn new(n: usize) -> Self {
         Self {
-            node: (0..n).map(|i| Node { parent: i, size: 1 }).collect(),
+            node: vec![Node::Root(Size(1)); n],
         }
     }
 
     pub fn root(&mut self, i: usize) -> usize {
-        if self.node[i].parent == i {
-            return i;
+        self.root_impl(i).idx
         }
-        let r = self.root(self.node[i].parent);
-        self.node[i].parent = r;
+    fn root_impl(&mut self, i: usize) -> RootInfo {
+        match self.node[i] {
+            Node::Root(s) => RootInfo { idx: i, size: s },
+            Node::Leaf(Parent(p)) => {
+                let r = self.root_impl(p);
+                self.node[i] = Node::Leaf(Parent(r.idx));
         r
     }
-    pub fn unite(&mut self, i: usize, j: usize) -> bool {
-        let i = self.root(i);
-        let j = self.root(j);
-        if i == j {
-            false
-        } else {
-            self.node[i].parent = j;
-            self.node[j].size += std::mem::replace(&mut self.node[i].size, 0);
-            true
         }
     }
+    pub fn unite(&mut self, u: usize, v: usize) -> bool {
+        let mut u = self.root_impl(u);
+        let mut v = self.root_impl(v);
+        if u.idx == v.idx {
+            return false;
+        }
+        if u.size < v.size {
+            std::mem::swap(&mut u, &mut v);
+        }
+        self.node[u.idx] = Node::Root(Size(u.size.0 + v.size.0));
+        self.node[v.idx] = Node::Leaf(Parent(u.idx));
+            true
+        }
     pub fn size(&mut self, i: usize) -> usize {
-        let r = self.root(i);
-        self.node[r].size
+        self.root_impl(i).size.0
     }
     pub fn is_same(&mut self, i: usize, j: usize) -> bool {
         self.root(i) == self.root(j)
