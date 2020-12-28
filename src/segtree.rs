@@ -112,7 +112,7 @@ where
         Self {
             n: n,
             id: id.clone(),
-            dat: vec![id; n * 2 - 1],
+            dat: vec![id; n * 2],
             f: f,
         }
     }
@@ -124,10 +124,10 @@ where
     /// Cost is `O(N)`.
     pub fn build_from_slice(dat: &[T], id: T, f: F) -> Self {
         let n = dat.len().next_power_of_two();
-        let mut v = Vec::with_capacity(2 * n - 1);
-        v.resize(n - 1, id.clone());
+        let mut v = Vec::with_capacity(2 * n);
+        v.resize(n, id.clone());
         v.extend_from_slice(dat);
-        v.resize(2 * n - 1, id.clone());
+        v.resize(2 * n, id.clone());
         let mut st = Self {
             n: n,
             id: id,
@@ -169,8 +169,8 @@ where
     /// # Time complexity
     /// Cost is `O(1)`.
     #[inline]
-    pub fn get_element(&self, i: usize) -> &T {
-        &self.dat[self.n + i - 1]
+    pub fn get(&self, i: usize) -> &T {
+        &self.dat[self.n + i]
     }
 
     /// Extract a slice containing elements.
@@ -178,14 +178,14 @@ where
     /// Cost is `O(1)`.
     #[inline]
     pub fn as_slice(&self) -> &[T] {
-        &self.dat[self.n - 1..]
+        &self.dat[self.n..]
     }
 
     /// Update element i.
     /// # Time complexity
     /// Cost is `O(log N)`.
     pub fn update(&mut self, i: usize, dat: T) {
-        let i = self.n + i - 1;
+        let i = self.n + i;
         self.dat[i] = dat;
         self.update_to_bottom_up(i);
     }
@@ -193,19 +193,19 @@ where
     /// # Time complexity
     /// Cost is `O(log N)`.
     pub fn update_by<F2: Fn(&mut T)>(&mut self, i: usize, f: F2) {
-        let i = self.n + i - 1;
+        let i = self.n + i;
         f(&mut self.dat[i]);
         self.update_to_bottom_up(i);
     }
 
     #[inline]
     fn update_at(&mut self, i: usize) {
-        self.dat[i] = (self.f)(&self.dat[i * 2 + 1], &self.dat[i * 2 + 2]);
+        self.dat[i] = (self.f)(&self.dat[i * 2 + 0], &self.dat[i * 2 + 1]);
     }
     #[inline]
     fn update_to_bottom_up(&mut self, mut i: usize) {
-        while i != 0 {
-            i = (i - 1) / 2;
+        while i != 1 {
+            i = i / 2;
             self.update_at(i);
         }
     }
@@ -214,7 +214,7 @@ where
     /// # Time complexity
     /// Cost is `O(log N)`.
     pub fn query<R: RangeBounds<usize>>(&self, r: R) -> T {
-        self.query_impl(0, &bound_to_range(r, 0..self.n), 0..self.n)
+        self.query_impl(1, &bound_to_range(r, 0..self.n), 0..self.n)
     }
     fn query_impl(&self, k: usize, r: &Range<usize>, a: Range<usize>) -> T {
         if !is_overlap(r, &a) {
@@ -224,8 +224,8 @@ where
         } else {
             let m = (a.start + a.end) / 2;
             (self.f)(
-                &self.query_impl(k * 2 + 1, r, a.start..m),
-                &self.query_impl(k * 2 + 2, r, m..a.end),
+                &self.query_impl(k * 2 + 0, r, a.start..m),
+                &self.query_impl(k * 2 + 1, r, m..a.end),
             )
         }
     }
@@ -236,7 +236,7 @@ where
 fn test_segtree() {
     let mut st = SegTree::build_from_slice(&[1, 2, 3, 4, 5], 0, |&a, &b| a + b);
     assert_eq!(st.len(), 8);
-    assert_eq!(st.get_element(2), &3);
+    assert_eq!(st.get(2), &3);
     assert_eq!(st.as_slice(), &[1, 2, 3, 4, 5, 0, 0, 0]);
     assert_eq!(st.query(1..4), 9);
     assert_eq!(st.query(1..=4), 14);
@@ -245,9 +245,39 @@ fn test_segtree() {
     assert_eq!(st.query(2..), 12);
     assert_eq!(st.query(0..0), 0);
 
+    st.update(1, 4);
+    assert_eq!(st.query(..3), 8);
+
     st.update_by(0, |dat| *dat += 2);
-    assert_eq!(st.query(0..4), 12);
-    assert_eq!(st.as_slice(), &[3, 2, 3, 4, 5, 0, 0, 0]);
+    assert_eq!(st.query(0..4), 14);
+    assert_eq!(st.as_slice(), &[3, 4, 3, 4, 5, 0, 0, 0]);
+}
+
+#[cfg(test)]
+#[test]
+fn test_segtree_stress() {
+    use rand::distributions::{Distribution, Uniform};
+    let n = 10_000;
+    let d = Uniform::from(0..n);
+    let d2 = Uniform::from(-(n as i64)..=n as i64);
+    let mut rng = rand::thread_rng();
+
+    let mut st = SegTree::new(n, 0, |&a, &b| a + b);
+    let mut stup = vec![0; n];
+
+    for _ in 0..n {
+        let i = d.sample(&mut rng);
+        let c = d2.sample(&mut rng);
+        stup[i] = c;
+        st.update(i, c);
+
+        let mut a = d.sample(&mut rng);
+        let mut b = d.sample(&mut rng);
+        if a > b {
+            std::mem::swap(&mut a, &mut b);
+        }
+        assert_eq!(st.query(a..b), stup[a..b].iter().sum());
+    }
 }
 
 pub struct LazySegTree<T, U, F, G, H> {
