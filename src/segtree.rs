@@ -15,6 +15,7 @@ fn bound_to_range<R: RangeBounds<usize>>(r1: R, r2: Range<usize>) -> Range<usize
     std::cmp::max(s, r2.start)..std::cmp::min(e, r2.end)
 }
 
+#[cfg(test)]
 #[test]
 fn test_bound_to_range() {
     assert_eq!(bound_to_range(1..3, 0..4), 1..3);
@@ -200,6 +201,7 @@ where
     }
 }
 
+#[cfg(test)]
 #[test]
 fn test_segtree() {
     let mut st = SegTree::build_from_slice(&[1, 2, 3, 4, 5], 0, |&a, &b| a + b);
@@ -323,6 +325,7 @@ where
     }
 }
 
+#[cfg(test)]
 #[test]
 fn test_lazysegtree() {
     let mut lst = LazySegTree::build_from_slice(
@@ -349,6 +352,7 @@ fn test_lazysegtree() {
     assert_eq!(lst.query(0..2), 5);
 }
 
+#[cfg(test)]
 #[test]
 fn test_lazysegtree_stress() {
     use rand::distributions::{Distribution, Uniform};

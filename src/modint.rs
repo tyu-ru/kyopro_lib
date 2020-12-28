@@ -236,7 +236,7 @@ impl<M: Modulation> Factorial<M> {
 
 #[cfg(test)]
 mod test {
-    use crate::modint::*;
+    use super::*;
 
     struct F;
     impl Modulation for F {

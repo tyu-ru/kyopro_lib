@@ -24,6 +24,7 @@ pub fn z_algorithm<T: PartialEq>(s: &[T]) -> Vec<usize> {
     res
 }
 
+#[cfg(test)]
 #[test]
 fn test_z_algorithm() {
     assert_eq!(

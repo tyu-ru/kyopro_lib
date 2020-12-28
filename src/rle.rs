@@ -73,6 +73,7 @@ impl<T: std::cmp::PartialEq + Copy> RLE<T> {
     }
 }
 
+#[cfg(test)]
 #[test]
 fn test_rle() {
     let mut rle = RLE::new();

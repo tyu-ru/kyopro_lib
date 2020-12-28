@@ -63,6 +63,7 @@ impl Tree {
     }
 }
 
+#[cfg(test)]
 #[test]
 fn test_tree_bfs() {
     let tree = Tree::new_with_edge(&[(0, 1), (1, 2), (1, 3), (4, 2), (3, 5)]);
@@ -76,6 +77,7 @@ fn test_tree_bfs() {
     assert_eq!(v, &[2, 1, 4, 0, 3, 5]);
 }
 
+#[cfg(test)]
 #[test]
 fn test_tree_dfs() {
     let tree = Tree::new_with_edge(&[(0, 1), (1, 2), (1, 3), (4, 2), (3, 5)]);

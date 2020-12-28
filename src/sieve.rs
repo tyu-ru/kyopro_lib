@@ -1,4 +1,4 @@
-use crate::rle::RLE;
+use super::rle::RLE;
 
 pub struct Sieve {
     v: Vec<u64>,
@@ -71,7 +71,7 @@ impl Sieve {
 
 #[cfg(test)]
 mod test {
-    use crate::sieve::Sieve;
+    use super::Sieve;
     pub fn test_primes(s: &Sieve) {
         assert_eq!(s.is_prime(2), true);
         assert_eq!(s.is_prime(3), true);
@@ -91,19 +91,18 @@ mod test {
         assert_eq!(s.is_prime(15), false);
         assert_eq!(s.is_prime(16), false);
     }
-}
-
 #[test]
 fn test_sieve() {
     assert_eq!(Sieve::new(16).v, &[1, 3, 5, 7, 3, 11, 13, 3]);
     assert_eq!(Sieve::new(17).v, &[1, 3, 5, 7, 3, 11, 13, 3, 17]);
     assert_eq!(Sieve::new(17).p, &[2, 3, 5, 7, 11, 13, 17]);
 
-    test::test_primes(&Sieve::new(16));
-    test::test_primes(&Sieve::new(17));
+        test_primes(&Sieve::new(16));
+        test_primes(&Sieve::new(17));
 
     let s = Sieve::new(140);
     assert_eq!(s.factorization(1).v(), &[(1, 1)]);
     assert_eq!(s.factorization(127).v(), &[(127, 1)]);
     assert_eq!(s.factorization(140).v(), &[(2, 2), (5, 1), (7, 1)]);
+}
 }

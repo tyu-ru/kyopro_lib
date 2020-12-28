@@ -49,6 +49,7 @@ pub fn grid_8(
     )
 }
 
+#[cfg(test)]
 #[test]
 fn test_grid() {
     use itertools::*;

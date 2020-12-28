@@ -41,6 +41,7 @@ impl UnionFind {
     }
 }
 
+#[cfg(test)]
 #[test]
 fn test_unionfind() {
     let mut uf = UnionFind::new(5);

@@ -55,6 +55,7 @@ where
     r
 }
 
+#[cfg(test)]
 #[test]
 fn test_lower_bound() {
     let arr = &[0, 2, 4, 6, 8];
@@ -68,6 +69,7 @@ fn test_lower_bound() {
     assert_eq!(lower_bound(0, arr.len(), g(1)), 1);
     assert_eq!(lower_bound(0, arr.len(), g(9)), 5);
 }
+#[cfg(test)]
 #[test]
 fn test_lower_bound2() {
     assert_eq!(lower_bound(i64::min_value() + 1, 0, |x| -100 < x), -99);
@@ -115,6 +117,7 @@ impl Iterator for BitPattern {
     }
 }
 
+#[cfg(test)]
 #[test]
 fn test_bit_pattern() {
     assert_eq!(BitPattern::new(0).collect::<Vec<_>>(), []);
@@ -155,6 +158,7 @@ impl Iterator for BitIter {
     }
 }
 
+#[cfg(test)]
 #[test]
 fn test_bit_iter() {
     assert_eq!(BitIter::new(0).collect::<Vec<_>>(), []);
@@ -166,6 +170,7 @@ pub fn pick2(r: std::ops::Range<usize>) -> impl Iterator<Item = (usize, usize)> 
         .flat_map(move |i| (i + 1..r.end).map(move |j| (i, j)))
 }
 
+#[cfg(test)]
 #[test]
 fn test_pick2() {
     assert_eq!(pick2(0..0).collect::<Vec<_>>(), []);
@@ -184,6 +189,7 @@ pub fn log2p1<T: num::PrimInt>(x: T) -> T {
     }
 }
 
+#[cfg(test)]
 #[test]
 fn test_log2p1() {
     assert_eq!(log2p1(0), 0);
@@ -205,6 +211,7 @@ pub fn next_permutation(p: &mut [usize]) -> bool {
     }
 }
 
+#[cfg(test)]
 #[test]
 fn test_next_permutation() {
     let mut a = [1, 2, 3];
