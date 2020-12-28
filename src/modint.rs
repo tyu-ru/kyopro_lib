@@ -205,6 +205,10 @@ pub struct Factorial<M: Modulation> {
     neg: Vec<ModInt<M>>,
 }
 impl<M: Modulation> Factorial<M> {
+    pub fn factorial(&self, n: u64) -> ModInt<M> {
+        self.pos[n as usize]
+    }
+
     pub fn permutation(&self, n: u64, r: u64) -> ModInt<M> {
         if r > n {
             ModInt::new(0)
