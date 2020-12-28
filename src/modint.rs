@@ -2,7 +2,7 @@ pub trait Modulation {
     const MOD: u64;
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq)]
 pub struct ModInt<M: Modulation> {
     x: u64,
     phantom: std::marker::PhantomData<M>,
@@ -16,6 +16,11 @@ impl<M: Modulation> Clone for ModInt<M> {
 impl<M: Modulation> Copy for ModInt<M> {}
 
 impl<M: Modulation> std::fmt::Display for ModInt<M> {
+    fn fmt(&self, dest: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(dest, "{}", self.x)
+    }
+}
+impl<M: Modulation> std::fmt::Debug for ModInt<M> {
     fn fmt(&self, dest: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         write!(dest, "{}", self.x)
     }
