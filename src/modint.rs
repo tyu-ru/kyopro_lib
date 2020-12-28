@@ -149,20 +149,6 @@ impl<M: Modulation> std::ops::Mul for ModInt<M> {
     }
 }
 
-/// ax + by = gcd(a,b) を満たす最小のx,yの組 + gcd
-/// ```
-/// // assert_eq!(ext_gcd(4,6),(-1,1,2));
-/// ```
-fn ext_gcd(a: u64, b: u64) -> (i64, i64, u64) {
-    if b == 0 {
-        (1, 0, a)
-    } else {
-        let (mut y, x, d) = ext_gcd(b, a % b);
-        y -= (a / b) as i64 * x;
-        (x, y, d)
-    }
-}
-
 impl<M: Modulation> ModInt<M> {
     pub fn pow(&self, mut n: u64) -> Self {
         let mut res = Self::new_uncheck(1);
@@ -178,7 +164,7 @@ impl<M: Modulation> ModInt<M> {
     }
 
     pub fn inv(&self) -> Self {
-        let (mut x, _, _) = ext_gcd(self.x, M::MOD);
+        let (mut x, _, _) = super::math::ext_gcd(self.x, M::MOD);
         if x < 0 {
             x %= M::MOD as i64;
             x += M::MOD as i64;
@@ -302,12 +288,6 @@ mod test {
         assert_eq!(Mint::new(4).inv().val(), 2);
         assert_eq!(Mint::new(5).inv().val(), 3);
         assert_eq!(Mint::new(6).inv().val(), 6);
-    }
-    #[test]
-    fn test_ext_gcd() {
-        assert_eq!(ext_gcd(2, 3), (-1, 1, 1));
-        assert_eq!(ext_gcd(4, 6), (-1, 1, 2));
-        assert_eq!(ext_gcd(6, 4), (1, -1, 2));
     }
 
     #[test]

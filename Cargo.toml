@@ -23,7 +23,7 @@ rand = "=0.7.3"
 "crate::kitamsasa" = []
 "crate::math" = []
 "crate::misc" = []
-"crate::modint" = []
+"crate::modint" = ["crate::math"]
 "crate::rle" = []
 "crate::segtree" = []
 "crate::seive" = ["crate::rle"]

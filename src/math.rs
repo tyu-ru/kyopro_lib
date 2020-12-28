@@ -105,3 +105,26 @@ fn test_inv_mod() {
 
     assert_eq!(inv_mod(21, 100), Some(81));
 }
+
+/// The smallest x,y pair satisfying `ax + by = gcd(a,b)` and gcd
+/// ```
+/// # use kyopro_lib::math::ext_gcd;
+/// assert_eq!(ext_gcd(4,6), (-1,1,2));
+/// ```
+pub fn ext_gcd(a: u64, b: u64) -> (i64, i64, u64) {
+    if b == 0 {
+        (1, 0, a)
+    } else {
+        let (mut y, x, d) = ext_gcd(b, a % b);
+        y -= (a / b) as i64 * x;
+        (x, y, d)
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn test_ext_gcd() {
+    assert_eq!(ext_gcd(2, 3), (-1, 1, 1));
+    assert_eq!(ext_gcd(4, 6), (-1, 1, 2));
+    assert_eq!(ext_gcd(6, 4), (1, -1, 2));
+}
