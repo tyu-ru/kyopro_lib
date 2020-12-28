@@ -1,5 +1,6 @@
 pub mod fewnick_tree;
 pub mod grid;
+pub mod kitamasa;
 pub mod math;
 pub mod misc;
 pub mod modint;
