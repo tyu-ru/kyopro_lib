@@ -260,6 +260,11 @@ pub struct LazySegTree<T, U, F, G, H> {
     h: H,
 }
 
+/// Lazy evaluate Segment Tree. Supports range update and range query.
+///
+/// (`T`, `f`) must be monoid with `id` as identity.
+///
+/// (`U`, `g`) must be semigroup.
 impl<T, U, F, G, H> LazySegTree<T, U, F, G, H>
 where
     T: Clone,
