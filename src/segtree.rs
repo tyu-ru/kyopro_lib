@@ -33,6 +33,36 @@ fn is_include(r1: &Range<usize>, r2: &Range<usize>) -> bool {
     r1.start <= r2.start && r2.end <= r1.end
 }
 
+#[cfg(test)]
+#[test]
+fn test_range_overlap() {
+    let check = |r1, r2, res| {
+        assert_eq!(is_overlap(&r1, &r2), res);
+        assert_eq!(is_overlap(&r2, &r1), res);
+    };
+    check(0..2, 0..2, true);
+    check(0..2, 0..3, true);
+    check(1..3, 0..3, true);
+    check(1..2, 0..3, true);
+    check(0..2, 1..1, true);
+    check(0..2, 3..5, false);
+    check(0..2, 2..4, false);
+    check(0..2, 0..0, false);
+    check(0..2, 2..2, false);
+    check(0..2, 3..3, false);
+}
+
+#[cfg(test)]
+#[test]
+fn test_range_include() {
+    let is_include = |r1, r2| is_include(&r1, &r2);
+    assert_eq!(is_include(0..2, 0..2), true);
+    assert_eq!(is_include(0..3, 1..2), true);
+    assert_eq!(is_include(0..2, 3..5), false);
+    assert_eq!(is_include(3..5, 0..2), false);
+    assert_eq!(is_include(0..2, 0..3), false);
+}
+
 /// Segment Tree. Supports single element update and range query.
 ///
 /// (`T`, `f`) must be monoid with `id` as identity.
