@@ -133,3 +133,12 @@ impl<T: PartialOrd> Ord for Total<T> {
         self.0.partial_cmp(&other.0).unwrap()
     }
 }
+
+pub fn atcg_to_index(c: char) -> usize {
+    match c {
+        'A' | 'a' => 0,
+        'T' | 't' => 1,
+        'C' | 'c' => 2,
+        _ => 3,
+    }
+}
