@@ -3,7 +3,7 @@ pub struct RLE<T> {
     len: usize,
 }
 
-impl<T: std::cmp::PartialEq + Copy> RLE<T> {
+impl<T: std::cmp::PartialEq + Clone> RLE<T> {
     pub fn new() -> Self {
         Self { v: vec![], len: 0 }
     }
@@ -46,7 +46,7 @@ impl<T: std::cmp::PartialEq + Copy> RLE<T> {
     }
     pub fn extend_from_slice(&mut self, s: &[T]) {
         for x in s {
-            self.push(*x);
+            self.push(x.clone());
         }
     }
     pub fn pop(&mut self) -> Option<T> {
@@ -54,7 +54,7 @@ impl<T: std::cmp::PartialEq + Copy> RLE<T> {
         if l == 0 {
             None
         } else {
-            let res = Some(self.v[l - 1].0);
+            let res = Some((self.v[l - 1].0).clone());
             if self.v[l - 1].1 == 0 {
                 self.v.pop();
             } else if self.v[l - 1].1 == 1 {
