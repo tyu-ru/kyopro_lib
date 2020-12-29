@@ -1,5 +1,6 @@
 use std::ops::Range;
 use std::ops::RangeBounds;
+
 fn bound_to_range<R: RangeBounds<usize>>(r1: R, r2: Range<usize>) -> Range<usize> {
     use std::ops::Bound;
     let s = match r1.start_bound() {
