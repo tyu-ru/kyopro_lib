@@ -201,12 +201,12 @@ where
 
     #[inline]
     fn update_at(&mut self, i: usize) {
-        self.dat[i] = (self.f)(&self.dat[i * 2 + 0], &self.dat[i * 2 + 1]);
+        self.dat[i] = (self.f)(&self.dat[i << 1 | 0], &self.dat[i << 1 | 1]);
     }
     #[inline]
     fn update_to_bottom_up(&mut self, mut i: usize) {
         while i != 1 {
-            i = i / 2;
+            i >>= 1;
             self.update_at(i);
         }
     }
@@ -223,10 +223,10 @@ where
         } else if is_include(r, &a) {
             self.dat[k].clone()
         } else {
-            let m = (a.start + a.end) / 2;
+            let m = (a.start + a.end) >> 1;
             (self.f)(
-                &self.query_impl(k * 2 + 0, r, a.start..m),
-                &self.query_impl(k * 2 + 1, r, m..a.end),
+                &self.query_impl(k << 1 | 0, r, a.start..m),
+                &self.query_impl(k << 1 | 1, r, m..a.end),
             )
         }
     }
