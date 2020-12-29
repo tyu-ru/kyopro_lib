@@ -135,7 +135,7 @@ where
             dat: v,
             f: f,
         };
-        for i in (0..n - 1).rev() {
+        for i in (1..n).rev() {
             st.update_at(i);
         }
         st
@@ -252,6 +252,9 @@ fn test_segtree() {
     st.update_by(0, |dat| *dat += 2);
     assert_eq!(st.query(0..4), 14);
     assert_eq!(st.as_slice(), &[3, 4, 3, 4, 5, 0, 0, 0]);
+
+    let st = SegTree::build_from_slice(&[1, 2, 3, 4], 0, |a, b| a + b);
+    assert_eq!(st.query(2..), 7);
 }
 
 #[cfg(test)]
