@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use kyopro_lib::segtree::SegTree;
+use kyopro_lib::segtree::{monoid, SegTree};
 
 fn bench_segtree(c: &mut Criterion) {
     use rand::distributions::{Distribution, Uniform};
@@ -20,7 +20,7 @@ fn bench_segtree(c: &mut Criterion) {
         })
         .collect::<Vec<_>>();
 
-    let mut st = SegTree::new(n, 0, |&a, &b| a + b);
+    let mut st = SegTree::new(n, monoid::Add::new());
     c.bench_function("segtree", |b| {
         b.iter(|| {
             for &(i, c, a, b) in &q {
