@@ -228,6 +228,14 @@ where
         f(&mut self.dat[i]);
         self.update_to_bottom_up(i);
     }
+    /// Update element i by x <- M::op(x, y).
+    /// # Time complexity
+    /// Cost is `O(log N)`.
+    pub fn update_by_monoid_op(&mut self, i: usize, y: M::T) {
+        let i = self.n + i;
+        self.dat[i] = self.m.op(&self.dat[i], &y);
+        self.update_to_bottom_up(i);
+    }
 
     #[inline]
     fn update_at(&mut self, i: usize) {
@@ -325,8 +333,9 @@ fn test_segtree() {
     assert_eq!(st.query(..3), 8);
 
     st.update_by(0, |dat| *dat += 2);
-    assert_eq!(st.query(0..4), 14);
-    assert_eq!(st.as_slice(), &[3, 4, 3, 4, 5, 0, 0, 0]);
+    st.update_by_monoid_op(1, -6);
+    assert_eq!(st.query(0..4), 8);
+    assert_eq!(st.as_slice(), &[3, -2, 3, 4, 5, 0, 0, 0]);
 
     let st = SegTree::build_from_slice(&[1, 2, 3, 4], monoid::Add::new());
     assert_eq!(st.query(2..), 7);
