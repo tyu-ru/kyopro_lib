@@ -117,6 +117,8 @@ where
 /// # use kyopro_lib::segtree::*;
 /// // Range Minimum Query
 /// let mut st = SegTree::build_from_slice(&[2,4,3,1,5], GenericMonoid::new(std::i32::MAX, |&a, &b|std::cmp::min(a,b)));
+/// // Range Minimum Query (used declared monoid)
+/// let mut st = SegTree::build_from_slice(&[2,4,3,1,5], monoid::Min::new());
 ///
 /// assert_eq!(st.len(), 8);
 ///
@@ -270,48 +272,160 @@ where
     }
 }
 
+impl<M, T> SegTree<M>
+where
+    M: Monoid<T = (T, usize)>,
+    T: Clone,
+{
+    pub fn new_with_index(n: usize, m: M) -> Self {
+        let id = m.id().0;
+        Self::build_from_iter((0..n).map(|i| (id.clone(), i)), m)
+    }
+    pub fn build_from_slice_with_index(dat: &[T], m: M) -> Self {
+        Self::build_from_iter(dat.iter().cloned().enumerate().map(|(i, x)| (x, i)), m)
+    }
+    pub fn build_from_iter_with_index<I: Iterator<Item = T>>(iter: I, m: M) -> Self {
+        Self::build_from_iter(iter.enumerate().map(|(i, x)| (x, i)), m)
+    }
+
+    pub fn query_index<R: RangeBounds<usize>>(&self, r: R) -> usize {
+        self.query(r).1
+    }
+}
+
 pub mod monoid {
     use super::Monoid;
     use std::marker::PhantomData;
 
-    macro_rules! decl_monoid_struct {
+    macro_rules! decl_monoid {
         ($name:ident, [$($traits:path),*], [$id:block], [$lhs:ident,$rhs:ident, $op:block]) => {
-            pub struct $name<T>(PhantomData<T>);
-            impl<T> $name<T> {
+            decl_monoid!($name, T, [$($traits),*], [$id], [$lhs, $rhs, $op]);
+        };
+        ($name:ident, $t:ty, [$($traits:path),*], [$id:block], [$lhs:ident, $rhs:ident, $op:block]) => {
+            pub struct $name<T> where T:Clone, $(T:$traits),* {_mt:PhantomData<T>}
+            impl<T> $name<T>
+            where
+                T: Clone, $(T : $traits),*
+            {
                 pub fn new() -> Self {
-                    Self(PhantomData)
+                    Self{_mt:PhantomData}
                 }
             }
             impl<T> Monoid for $name<T>
             where
                 T: Clone, $(T : $traits),*
             {
-                type T = T;
-                fn id(&self) -> T { $id }
-                fn op(&self, $lhs: &T, $rhs: &T) -> T {
+                type T = $t;
+                fn id(&self) -> Self::T { $id }
+                fn op(&self, $lhs: &Self::T, $rhs: &Self::T) -> Self::T {
                     $op
                 }
             }
         };
     }
 
-    decl_monoid_struct!(
+    decl_monoid!(
         Add,
         [num::Zero, std::ops::Add],
         [{ T::zero() }],
         [a, b, { a.clone() + b.clone() }]
     );
-    decl_monoid_struct!(
+    decl_monoid!(
         Mul,
         [num::One, std::ops::Mul],
         [{ T::one() }],
         [a, b, { a.clone() * b.clone() }]
     );
-    decl_monoid_struct!(
+    decl_monoid!(
         GCD,
         [num::Integer],
         [{ T::zero() }],
         [a, b, { num::integer::gcd(a.clone(), b.clone()) }]
+    );
+    decl_monoid!(
+        LCM,
+        [num::Integer],
+        [{ T::one() }],
+        [a, b, { num::integer::lcm(a.clone(), b.clone()) }]
+    );
+
+    use std::cmp::{max, min};
+    decl_monoid!(
+        Min,
+        [num::Bounded, Ord],
+        [{ T::max_value() }],
+        [a, b, { min(a, b).clone() }]
+    );
+    decl_monoid!(
+        Max,
+        [num::Bounded, Ord],
+        [{ T::min_value() }],
+        [a, b, { max(a, b).clone() }]
+    );
+    decl_monoid!(
+        MinPartialOrd,
+        [num::Bounded, PartialOrd],
+        [{ T::max_value() }],
+        [a, b, {
+            if a < b {
+                a.clone()
+            } else {
+                b.clone()
+            }
+        }]
+    );
+    decl_monoid!(
+        MaxPartialOrd,
+        [num::Bounded, PartialOrd],
+        [{ T::min_value() }],
+        [a, b, {
+            if a > b {
+                a.clone()
+            } else {
+                b.clone()
+            }
+        }]
+    );
+
+    decl_monoid!(
+        MinWihtLeftIndex,
+        (T, usize),
+        [num::Bounded, Ord],
+        [{ (T::max_value(), 0) }],
+        [a, b, { min(a, b).clone() }]
+    );
+    decl_monoid!(
+        MinWihtRightIndex,
+        (T, usize),
+        [num::Bounded, Ord],
+        [{ (T::max_value(), 0) }],
+        [a, b, {
+            if a.0 != b.0 {
+                min(a, b).clone()
+            } else {
+                (a.0.clone(), max(a.1, b.1))
+            }
+        }]
+    );
+    decl_monoid!(
+        MaxWihtLeftIndex,
+        (T, usize),
+        [num::Bounded, Ord],
+        [{ (T::max_value(), 0) }],
+        [a, b, {
+            if a.0 != b.0 {
+                max(a, b).clone()
+            } else {
+                (a.0.clone(), min(a.1, b.1))
+            }
+        }]
+    );
+    decl_monoid!(
+        MaxWihtRightIndex,
+        (T, usize),
+        [num::Bounded, Ord],
+        [{ (T::min_value(), 0) }],
+        [a, b, { max(a, b).clone() }]
     );
 }
 
@@ -339,6 +453,19 @@ fn test_segtree() {
 
     let st = SegTree::build_from_slice(&[1, 2, 3, 4], monoid::Add::new());
     assert_eq!(st.query(2..), 7);
+}
+
+#[cfg(test)]
+#[test]
+fn test_segtree_indexed_initialize() {
+    let st =
+        SegTree::build_from_slice_with_index(&[3, 2, 2, 4, 1], monoid::MinWihtLeftIndex::new());
+    assert_eq!(st.query(..), (1, 4));
+    assert_eq!(st.query(2..4), (2, 2));
+    assert_eq!(st.query(1..4), (2, 1));
+    assert_eq!(st.query_index(..), 4);
+    assert_eq!(st.query_index(2..4), 2);
+    assert_eq!(st.query_index(1..4), 1);
 }
 
 #[cfg(test)]
