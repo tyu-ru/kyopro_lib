@@ -225,7 +225,7 @@ where
     /// Update element i by `f`.
     /// # Time complexity
     /// Cost is `O(log N)`.
-    pub fn update_by<F2: Fn(&mut M::T)>(&mut self, i: usize, f: F2) {
+    pub fn update_by<F: Fn(&mut M::T)>(&mut self, i: usize, f: F) {
         let i = self.n + i;
         f(&mut self.dat[i]);
         self.update_to_bottom_up(i);
@@ -269,6 +269,77 @@ where
                 &self.query_impl(k << 1 | 1, r, m..a.end),
             )
         }
+    }
+
+    /// binary search
+    pub fn max_right<F: Fn(&M::T) -> bool>(&self, l: usize, f: F) -> usize {
+        // using trailing_zeros() instead of trailing_ones().
+        // Because {integer}::trailing_ones() is >= Rust 1.46.0
+        if l == self.n || !f(&self.dat[self.n + l]) {
+            return l;
+        }
+        let mut s = self.m.id();
+        let mut k = self.n + l;
+        // search
+        while (!k).trailing_zeros() != k.count_ones() {
+            let s2 = self.m.op(&s, &self.dat[k]);
+            if !f(&s2) {
+                break;
+            }
+            s = s2;
+            if k & 1 == 0 {
+                k += 1;
+            } else {
+                k = (k + 1) >> 1;
+            }
+        }
+        if (!k).trailing_zeros() == k.count_ones() {
+            return self.n;
+        }
+        while k < self.n {
+            let s2 = self.m.op(&s, &self.dat[k << 1]);
+            if f(&s2) {
+                s = s2;
+                k = k << 1 | 1;
+            } else {
+                k <<= 1;
+            }
+        }
+        k - self.n
+    }
+
+    pub fn min_left<F: Fn(&M::T) -> bool>(&self, r: usize, f: F) -> usize {
+        if r == 0 || !f(&self.dat[self.n + r - 1]) {
+            return r;
+        }
+        let mut s = self.m.id();
+        let mut k = self.n + r - 1;
+        // search
+        while k.count_ones() != 1 {
+            let s2 = self.m.op(&s, &self.dat[k]);
+            if !f(&s2) {
+                break;
+            }
+            s = s2;
+            if k & 1 == 1 {
+                k ^= 1;
+            } else {
+                k = (k - 1) >> 1;
+            }
+        }
+        if k.count_ones() == 1 {
+            return 0;
+        }
+        while k < self.n {
+            let s2 = self.m.op(&s, &self.dat[k << 1 | 1]);
+            if f(&s2) {
+                s = s2;
+                k <<= 1;
+            } else {
+                k = k << 1 | 1;
+            }
+        }
+        k - self.n + 1
     }
 }
 
@@ -453,6 +524,37 @@ fn test_segtree() {
 
     let st = SegTree::build_from_slice(&[1, 2, 3, 4], monoid::Add::new());
     assert_eq!(st.query(2..), 7);
+}
+
+#[cfg(test)]
+#[test]
+fn test_segtree_max_right() {
+    let st = SegTree::build_from_slice(&vec![1; 9], monoid::Add::new());
+
+    assert_eq!(st.max_right(1, |&s| s <= 3), 4);
+    // assert_eq!(st.max_right(1, |&s| s <= 8), 16); // non-recurcive
+    assert_eq!(st.max_right(1, |&s| s <= 1), 2);
+    assert_eq!(st.max_right(0, |&s| s < 100), 16);
+    assert_eq!(st.max_right(5, |&s| s < 100), 16);
+    assert_eq!(st.max_right(0, |&s| s < 1), 0);
+    assert_eq!(st.max_right(1, |&s| s < 1), 1);
+    assert_eq!(st.max_right(9, |&s| s < 100), 16);
+    assert_eq!(st.max_right(16, |&s| s < 100), 16);
+}
+#[cfg(test)]
+#[test]
+fn test_segtree_min_left() {
+    let st = SegTree::build_from_slice(&vec![1; 9], monoid::Add::new());
+
+    assert_eq!(st.min_left(6, |&s| s <= 3), 3);
+    assert_eq!(st.min_left(6, |&s| s <= 6), 0);
+    assert_eq!(st.min_left(6, |&s| s <= 1), 5);
+    assert_eq!(st.min_left(16, |&s| s < 100), 0);
+    assert_eq!(st.min_left(6, |&s| s < 100), 0);
+    assert_eq!(st.min_left(16, |&s| s < 1), 9);
+    assert_eq!(st.min_left(16, |&s| s < 0), 16);
+    assert_eq!(st.min_left(6, |&s| s < 1), 6);
+    assert_eq!(st.min_left(0, |&s| s < 100), 0);
 }
 
 #[cfg(test)]
