@@ -1,29 +1,37 @@
 use criterion::{criterion_group, criterion_main, Criterion};
+use itertools::{izip, Itertools};
+
 use kyopro_lib::segtree::{monoid, SegTree};
 
-fn bench_segtree(c: &mut Criterion) {
+fn gen_rnd_dat<T>(n: usize, range: std::ops::Range<T>) -> Vec<T>
+where
+    T: rand::distributions::uniform::SampleUniform,
+{
     use rand::distributions::{Distribution, Uniform};
-    let n = 10_000;
-    let d = Uniform::from(0..n);
-    let d2 = Uniform::from(-(n as i64)..=n as i64);
+    let d = Uniform::from(range);
     let mut rng = rand::thread_rng();
-    let q = (0..n)
-        .map(|_| {
-            let i = d.sample(&mut rng);
-            let c = d2.sample(&mut rng);
-            let mut a = d.sample(&mut rng);
-            let mut b = d.sample(&mut rng);
-            if a > b {
-                std::mem::swap(&mut a, &mut b);
-            }
-            (i, c, a, b)
-        })
-        .collect::<Vec<_>>();
+    (0..n).map(|_| d.sample(&mut rng)).collect()
+}
+fn gen_rnd_dat2(n: usize, range: std::ops::Range<usize>) -> Vec<(usize, usize)> {
+    izip!(gen_rnd_dat(n, range.clone()), gen_rnd_dat(n, range))
+        .map(|(s, e)| if s <= e { (s, e) } else { (e, s) })
+        .collect()
+}
 
-    let mut st = SegTree::new(n, monoid::Add::new());
+fn bench_segtree(c: &mut Criterion) {
+    let n = 10_000;
+
+    let q = izip!(
+        gen_rnd_dat(n, 0..n),
+        gen_rnd_dat(n, -10000i64..10000i64),
+        gen_rnd_dat2(n, 0..n)
+    )
+    .collect_vec();
+
+    let mut st = SegTree::build_from_slice(&gen_rnd_dat(n, -10000..10000), monoid::Add::new());
     c.bench_function("segtree", |b| {
         b.iter(|| {
-            for &(i, c, a, b) in &q {
+            for &(i, c, (a, b)) in &q {
                 st.update(i, c);
                 st.query(a..b);
             }
@@ -31,5 +39,26 @@ fn bench_segtree(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, bench_segtree);
+fn bench_segtree_binsearch(c: &mut Criterion) {
+    let n = 10_000;
+    let q = izip!(
+        gen_rnd_dat(n, 0..n),
+        gen_rnd_dat(n, 0..10000),
+        gen_rnd_dat(n, 0..n),
+        gen_rnd_dat(n, 0..10000)
+    )
+    .collect_vec();
+    let mut st = SegTree::build_from_slice(&gen_rnd_dat(n, 0..10000), monoid::Add::new());
+    c.bench_function("segtree-binsearch", |b| {
+        b.iter(|| {
+            for &(i, x, j, y) in &q {
+                st.update(i, x);
+                st.max_right(j, |&s| s <= y);
+                st.min_left(j, |&s| s <= y);
+            }
+        })
+    });
+}
+
+criterion_group!(benches, bench_segtree, bench_segtree_binsearch);
 criterion_main!(benches);
