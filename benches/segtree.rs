@@ -1,7 +1,7 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use itertools::{izip, Itertools};
 
-use kyopro_lib::segtree::{monoid, SegTree};
+use kyopro_lib::segtree::{monoid, LazySegTree, SegTree};
 
 fn gen_rnd_dat<T>(n: usize, range: std::ops::Range<T>) -> Vec<T>
 where
@@ -60,5 +60,38 @@ fn bench_segtree_binsearch(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, bench_segtree, bench_segtree_binsearch);
+fn bench_lazy_segtree(c: &mut Criterion) {
+    let n = 10_000;
+
+    let mut lst = LazySegTree::build_from_slice(
+        &gen_rnd_dat(n, -10000i64..10000),
+        0,
+        |&a, &b| a + b,
+        |&a, &b| a + b,
+        |&a, &b, l| a + b * l as i64,
+    );
+
+    let q = izip!(
+        gen_rnd_dat(n, -10000i64..10000i64),
+        gen_rnd_dat2(n, 0..n),
+        gen_rnd_dat2(n, 0..n)
+    )
+    .collect_vec();
+
+    c.bench_function("lazy-segtree", |b| {
+        b.iter(|| {
+            for &(x, (a, b), (c, d)) in &q {
+                lst.update_range(a..b, x);
+                lst.query(c..d);
+            }
+        })
+    });
+}
+
+criterion_group!(
+    benches,
+    bench_segtree,
+    bench_segtree_binsearch,
+    bench_lazy_segtree
+);
 criterion_main!(benches);
