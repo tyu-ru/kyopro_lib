@@ -1,19 +1,22 @@
 use std::ops::Range;
 use std::ops::RangeBounds;
 
-fn bound_to_range<R: RangeBounds<usize>>(r1: R, r2: Range<usize>) -> Range<usize> {
+/// Convert `RangeBound<usize>` to `Range<usize>`.
+/// The range of `r` is bound by lim.
+#[inline]
+fn bound_to_range<R: RangeBounds<usize>>(r: R, lim: Range<usize>) -> Range<usize> {
     use std::ops::Bound;
-    let s = match r1.start_bound() {
+    let s = match r.start_bound() {
         Bound::Included(&s) => s,
         Bound::Excluded(&s) => s + 1,
-        Bound::Unbounded => r2.start,
+        Bound::Unbounded => lim.start,
     };
-    let e = match r1.end_bound() {
+    let e = match r.end_bound() {
         Bound::Included(&e) => e + 1,
         Bound::Excluded(&e) => e,
-        Bound::Unbounded => r2.end,
+        Bound::Unbounded => lim.end,
     };
-    std::cmp::max(s, r2.start)..std::cmp::min(e, r2.end)
+    std::cmp::max(s, lim.start)..std::cmp::min(e, lim.end)
 }
 
 #[cfg(test)]
@@ -27,9 +30,11 @@ fn test_bound_to_range() {
     assert_eq!(bound_to_range(..=3, 0..4), 0..4);
 }
 
+/// Returns `true` if `r1` and `r2` have common range.
 fn is_overlap(r1: &Range<usize>, r2: &Range<usize>) -> bool {
     !(r2.end <= r1.start || r1.end <= r2.start)
 }
+/// Returns `true` if r2 is a sub-range of `r1`
 fn is_include(r1: &Range<usize>, r2: &Range<usize>) -> bool {
     r1.start <= r2.start && r2.end <= r1.end
 }
@@ -64,12 +69,25 @@ fn test_range_include() {
     assert_eq!(is_include(0..2, 0..3), false);
 }
 
+/// Monoid trait.
+/// (`T`, `op`) must be monoid with `id` as identity.
+///
+/// # Expect
+/// - associativity : `op(a, op(b, c)) == op(op(a, b), c)` (`a`, `b`, `c` <- Monoid)
+/// - existence identity element : `op(a, id()) == op(id(), a) == a` && id() <- Monoid
 pub trait Monoid {
+    /// Type of monoid element.
     type T: Clone;
+    /// Returns identity element.
     fn id(&self) -> Self::T;
+    /// Binary operation.
     fn op(&self, lhs: &Self::T, rhs: &Self::T) -> Self::T;
 }
 
+/// Monoid that can specifiy the behavior in `Fn(..)`.
+/// # Expect
+/// - associativity : `op(a, op(b, c)) == op(op(a, b), c)` (`a`, `b`, `c` <- Monoid)
+/// - existence identity element : `op(a, id()) == op(id(), a) == a` && id() <- Monoid
 pub struct GenericMonoid<T, F>
 where
     T: Clone,
@@ -84,6 +102,10 @@ where
     T: Clone,
     F: Fn(&T, &T) -> T,
 {
+    /// Constructs `GenericMonoid`
+    /// # Expect
+    /// - id: identity element.
+    /// - op: binary operation.
     pub fn new(id: T, op: F) -> Self {
         Self { id, op }
     }
@@ -105,8 +127,6 @@ where
 
 /// Segment Tree. Supports single element update and range query.
 ///
-/// (`T`, `f`) must be monoid with `id` as identity.
-///
 /// In this data structure, the number of elements is an power of 2.
 /// The number of elements is extended to a smallest power of 2 greater than or equal to specified.
 /// (with each additional element filled with identity.)
@@ -127,6 +147,10 @@ where
 ///
 /// st.update(3, 10);
 /// assert_eq!(st.query(..4), 2);
+///
+/// let st = SegTree::build_from_slice_with_index(&[2, 4, 2, 2, 3], monoid::MinWihtRightIndex::new());
+/// assert_eq!(st.query_index(1..), 3);
+///
 /// ```
 pub struct SegTree<M: Monoid> {
     /// element len
@@ -180,8 +204,9 @@ where
     /// ```
     /// # use kyopro_lib::segtree::{SegTree,GenericMonoid};
     /// // RMQ (with index)
-    /// let st = SegTree::build_from_iter((0..5).map(|i|(0,i)), GenericMonoid::new((std::i32::MAX,0), |&a,&b|std::cmp::min(a,b)));
+    /// let st = SegTree::build_from_iter((0..5).map(|i|(0,i)), GenericMonoid::new((std::i32::MAX,0), |a,b|*std::cmp::min(a,b)));
     /// ```
+    /// cf. `monoid::MinWithLeftIndex`
     ///
     /// # Time complexity
     /// Cost is `O(N)`.
@@ -196,7 +221,7 @@ where
         self.n
     }
 
-    /// Returns a reference to an element i.
+    /// Returns a reference to an element `i`.
     /// # Panics
     /// Panics if `len() <= i`.
     /// # Time complexity
@@ -214,7 +239,7 @@ where
         &self.dat[self.n..]
     }
 
-    /// Update element i.
+    /// Update element `i`.
     /// # Time complexity
     /// Cost is `O(log N)`.
     pub fn update(&mut self, i: usize, dat: M::T) {
@@ -222,7 +247,7 @@ where
         self.dat[i] = dat;
         self.update_to_bottom_up(i);
     }
-    /// Update element i by `f`.
+    /// Update element `i` by `f`.
     /// # Time complexity
     /// Cost is `O(log N)`.
     pub fn update_by<F: Fn(&mut M::T)>(&mut self, i: usize, f: F) {
@@ -230,7 +255,7 @@ where
         f(&mut self.dat[i]);
         self.update_to_bottom_up(i);
     }
-    /// Update element i by x <- M::op(x, y).
+    /// Update element `i` by x <- M::op(x, y).
     /// # Time complexity
     /// Cost is `O(log N)`.
     pub fn update_by_monoid_op(&mut self, i: usize, y: M::T) {
@@ -251,7 +276,7 @@ where
         }
     }
 
-    /// Range query
+    /// Range query. Returns `op(r.start .. r.end)`.
     /// # Time complexity
     /// Cost is `O(log N)`.
     pub fn query<R: RangeBounds<usize>>(&self, r: R) -> M::T {
@@ -271,7 +296,11 @@ where
         }
     }
 
-    /// binary search
+    /// Returns maximum `r` than satisfies `f(query(l..r)) == true`.
+    /// # Expect
+    /// `f` must be monotonic with respect to increasing `r`.
+    /// # Time complexity
+    /// Cost is `O(log N)`.
     pub fn max_right<F: Fn(&M::T) -> bool>(&self, l: usize, f: F) -> usize {
         // using trailing_zeros() instead of trailing_ones().
         // Because {integer}::trailing_ones() is >= Rust 1.46.0
@@ -280,7 +309,6 @@ where
         }
         let mut s = self.m.id();
         let mut k = self.n + l;
-        // search
         while (!k).trailing_zeros() != k.count_ones() {
             let s2 = self.m.op(&s, &self.dat[k]);
             if !f(&s2) {
@@ -308,13 +336,17 @@ where
         k - self.n
     }
 
+    /// Returns minimum `l` than satisfies `f(query(l..r)) == true`.
+    /// # Expect
+    /// `f` must be monotonic with respect to decreasing `l`.
+    /// # Time complexity
+    /// Cost is `O(log N)`.
     pub fn min_left<F: Fn(&M::T) -> bool>(&self, r: usize, f: F) -> usize {
         if r == 0 || !f(&self.dat[self.n + r - 1]) {
             return r;
         }
         let mut s = self.m.id();
         let mut k = self.n + r - 1;
-        // search
         while k.count_ones() != 1 {
             let s2 = self.m.op(&s, &self.dat[k]);
             if !f(&s2) {
@@ -348,31 +380,49 @@ where
     M: Monoid<T = (T, usize)>,
     T: Clone,
 {
+    /// Constructs a new IndexedSegtree, all elements is initialized by (`id`, `index`).
+    /// The number of elements will be expanded as needed.
+    ///
+    /// # Time complexity
+    /// Cost is `O(N)`.
     pub fn new_with_index(n: usize, m: M) -> Self {
         let id = m.id().0;
         Self::build_from_iter((0..n).map(|i| (id.clone(), i)), m)
     }
+    /// Constructs a new Segment Tree, initialized by (`dat`, index).
+    /// The number of elements will be expanded as needed.
+    ///
+    /// # Time complexity
+    /// Cost is `O(N)`.
     pub fn build_from_slice_with_index(dat: &[T], m: M) -> Self {
         Self::build_from_iter(dat.iter().cloned().enumerate().map(|(i, x)| (x, i)), m)
     }
+    /// Constructs a new Segment Tree, initialized by (`iter`, index).
+    /// The number of elements will be expanded as needed.
+    ///
+    /// # Time complexity
+    /// Cost is `O(N)`.
     pub fn build_from_iter_with_index<I: Iterator<Item = T>>(iter: I, m: M) -> Self {
         Self::build_from_iter(iter.enumerate().map(|(i, x)| (x, i)), m)
     }
 
+    /// Returns `.query().1`.
     pub fn query_index<R: RangeBounds<usize>>(&self, r: R) -> usize {
         self.query(r).1
     }
 }
 
+/// Predefined monoids.
 pub mod monoid {
     use super::Monoid;
     use std::marker::PhantomData;
 
     macro_rules! decl_monoid {
-        ($name:ident, [$($traits:path),*], [$id:block], [$lhs:ident,$rhs:ident, $op:block]) => {
-            decl_monoid!($name, T, [$($traits),*], [$id], [$lhs, $rhs, $op]);
+        ($doc: expr, $name:ident, [$($traits:path),*], [$id:block], [$lhs:ident,$rhs:ident, $op:block]) => {
+            decl_monoid!($doc, $name, T, [$($traits),*], [$id], [$lhs, $rhs, $op]);
         };
-        ($name:ident, $t:ty, [$($traits:path),*], [$id:block], [$lhs:ident, $rhs:ident, $op:block]) => {
+        ($doc: expr, $name:ident, $t:ty, [$($traits:path),*], [$id:block], [$lhs:ident, $rhs:ident, $op:block]) => {
+            #[doc = $doc]
             pub struct $name<T> where T:Clone, $(T:$traits),* {_mt:PhantomData<T>}
             impl<T> $name<T>
             where
@@ -396,24 +446,28 @@ pub mod monoid {
     }
 
     decl_monoid!(
+        "Add monoid",
         Add,
         [num::Zero, std::ops::Add],
         [{ T::zero() }],
         [a, b, { a.clone() + b.clone() }]
     );
     decl_monoid!(
+        "Multiple monoid",
         Mul,
         [num::One, std::ops::Mul],
         [{ T::one() }],
         [a, b, { a.clone() * b.clone() }]
     );
     decl_monoid!(
+        "Greatest common divisor moonoid",
         GCD,
         [num::Integer],
         [{ T::zero() }],
         [a, b, { num::integer::gcd(a.clone(), b.clone()) }]
     );
     decl_monoid!(
+        "Least common multiple monoid",
         LCM,
         [num::Integer],
         [{ T::one() }],
@@ -422,18 +476,21 @@ pub mod monoid {
 
     use std::cmp::{max, min};
     decl_monoid!(
+        "Minimum value monoid",
         Min,
         [num::Bounded, Ord],
         [{ T::max_value() }],
         [a, b, { min(a, b).clone() }]
     );
     decl_monoid!(
+        "Maximum value monoid",
         Max,
         [num::Bounded, Ord],
         [{ T::min_value() }],
         [a, b, { max(a, b).clone() }]
     );
     decl_monoid!(
+        "Minimun value monoid for types for which `Ord` trait is not impl.",
         MinPartialOrd,
         [num::Bounded, PartialOrd],
         [{ T::max_value() }],
@@ -446,6 +503,7 @@ pub mod monoid {
         }]
     );
     decl_monoid!(
+        "Maximum value monoid for types for which `Ord` trait is not impl.",
         MaxPartialOrd,
         [num::Bounded, PartialOrd],
         [{ T::min_value() }],
@@ -459,6 +517,7 @@ pub mod monoid {
     );
 
     decl_monoid!(
+        "Minimun value monoid with leftmost index. <br> # See also <br> `SegTree::new_with_index()`",
         MinWihtLeftIndex,
         (T, usize),
         [num::Bounded, Ord],
@@ -466,6 +525,7 @@ pub mod monoid {
         [a, b, { min(a, b).clone() }]
     );
     decl_monoid!(
+        "Minimun value monoid with rightmost index. <br> # See also <br> `SegTree::new_with_index()`",
         MinWihtRightIndex,
         (T, usize),
         [num::Bounded, Ord],
@@ -479,6 +539,7 @@ pub mod monoid {
         }]
     );
     decl_monoid!(
+        "Maximun value monoid with leftmost index. <br> # See also <br> `SegTree::new_with_index()`",
         MaxWihtLeftIndex,
         (T, usize),
         [num::Bounded, Ord],
@@ -492,6 +553,7 @@ pub mod monoid {
         }]
     );
     decl_monoid!(
+        "Maximun value monoid with rightmost index. <br> # See also <br> `SegTree::new_with_index()`",
         MaxWihtRightIndex,
         (T, usize),
         [num::Bounded, Ord],
@@ -597,6 +659,11 @@ fn test_segtree_stress() {
     }
 }
 
+/// Lazy evaluate Segment Tree. Supports range update and range query.
+///
+/// # Expect
+/// (`T`, `f`) must be monoid with `id` as identity.
+/// (`U`, `g`) must be semigroup.
 pub struct LazySegTree<T, U, F, G, H> {
     n: usize,
     id: T,
@@ -607,11 +674,6 @@ pub struct LazySegTree<T, U, F, G, H> {
     h: H,
 }
 
-/// Lazy evaluate Segment Tree. Supports range update and range query.
-///
-/// (`T`, `f`) must be monoid with `id` as identity.
-///
-/// (`U`, `g`) must be semigroup.
 impl<T, U, F, G, H> LazySegTree<T, U, F, G, H>
 where
     T: Clone,
@@ -620,6 +682,11 @@ where
     G: Fn(&U, &U) -> U,
     H: Fn(&T, &U, usize) -> T,
 {
+    /// Constructs a new Lazy Segment Tree, all elements is initialized by `id`.
+    /// The number of elements will be expanded as needed.
+    ///
+    /// # Time complexity
+    /// Cost is `O(N)`.
     pub fn new(n: usize, id: T, f: F, g: G, h: H) -> Self {
         let n = n.next_power_of_two();
         Self {
@@ -632,6 +699,12 @@ where
             h: h,
         }
     }
+
+    /// Constructs a new Lazy Segment Tree, initialized by `dat`.
+    /// The number of elements will be expanded as needed.
+    ///
+    /// # Time complexity
+    /// Cost is `O(N)`.
     pub fn build_from_slice(dat: &[T], id: T, f: F, g: G, h: H) -> Self {
         let mut lst = Self::new(dat.len(), id, f, g, h);
         for i in 0..dat.len() {
@@ -642,11 +715,18 @@ where
         }
         lst
     }
+
+    /// Constructs a new Lazy Segment Tree, initialized by `iter`.
+    /// The number of elements will be expanded as needed.
+    ///
+    /// # Time complexity
+    /// Cost is `O(N)`.
     pub fn build_from_iter<I: Iterator<Item = T>>(iter: I, id: T, f: F, g: G, h: H) -> Self {
         use itertools::Itertools;
         Self::build_from_slice(&iter.collect_vec(), id, f, g, h)
     }
 
+    /// Returns the number of elements in Segment Tree.
     pub fn len(&self) -> usize {
         self.n
     }
@@ -668,6 +748,9 @@ where
         }
     }
 
+    /// Update range `r`
+    /// # Time complexity
+    /// Cost is `O(log N)`.
     pub fn update_range<R: RangeBounds<usize>>(&mut self, r: R, x: U) {
         self.update_range_impl(&bound_to_range(r, 0..self.n), 0, 0..self.n, &x)
     }
@@ -688,6 +771,9 @@ where
         self.dat[k] = (self.f)(&self.dat[k * 2 + 1], &self.dat[k * 2 + 2]);
     }
 
+    /// Range query. Returns `op(r.start .. r.end)`.
+    /// # Time complexity
+    /// Cost is `O(log N)`.
     pub fn query<R: RangeBounds<usize>>(&mut self, r: R) -> T {
         self.query_impl(&bound_to_range(r, 0..self.n), 0, 0..self.n)
     }
