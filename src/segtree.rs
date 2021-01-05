@@ -454,7 +454,7 @@ fn test_segtree_stress() {
     }
 }
 
-/// Monoid with action.
+/// Monoid with action trait.
 /// Action must be semigroup.
 /// # Expect
 /// `act(g, act(f, x)) == act(op(g, f), x)` `g, f <- (S, op)`
@@ -464,6 +464,7 @@ pub trait MonoidWithAct {
 
     fn m(&self) -> &Self::M;
     fn s(&self) -> &Self::S;
+    /// Action on monoid
     fn act(
         &self,
         lhs: &<Self::M as Semigroup>::T,
@@ -472,6 +473,9 @@ pub trait MonoidWithAct {
     ) -> <Self::M as Semigroup>::T;
 }
 
+/// Monoid with action that can specifiy the behavior in `Fn(..)`.
+/// # Expect
+/// - associativity : `op(a, op(b, c)) == op(op(a, b), c)` (`a`, `b`, `c` <- Semigroup)
 pub struct GenericMonoidWithAct<M, S, F>
 where
     M: Monoid,
@@ -939,6 +943,7 @@ pub mod predefined {
         [a, b, { max(a, b).clone() }]
     );
 
+    /// Set action
     pub struct Set<T: Clone> {
         _mt: PhantomData<T>,
     }
@@ -954,6 +959,7 @@ pub mod predefined {
         }
     }
 
+    /// Range set query & range min query.
     pub struct RSQRMinQ<T: Clone + Ord + num::Bounded> {
         m: algebra::predefined::Min<T>,
         s: Set<T>,
@@ -980,6 +986,7 @@ pub mod predefined {
         }
     }
 
+    /// Range set query & range add query
     pub struct RSQRAQ<T>
     where
         T: Clone
@@ -1031,25 +1038,16 @@ pub mod predefined {
         }
     }
 
+    /// Range add query & range add query.
     pub struct RAQRAQ<T>
     where
-        T: Clone
-            + std::ops::Add
-            + std::ops::Mul<Output = T>
-            + num::Zero
-            + num::Bounded
-            + num::FromPrimitive,
+        T: Clone + std::ops::Add + std::ops::Mul<Output = T> + num::Zero + num::FromPrimitive,
     {
         m: algebra::predefined::Add<T>,
     }
     impl<T> RAQRAQ<T>
     where
-        T: Clone
-            + std::ops::Add
-            + std::ops::Mul<Output = T>
-            + num::Zero
-            + num::Bounded
-            + num::FromPrimitive,
+        T: Clone + std::ops::Add + std::ops::Mul<Output = T> + num::Zero + num::FromPrimitive,
     {
         pub fn new() -> Self {
             Self {
@@ -1059,12 +1057,7 @@ pub mod predefined {
     }
     impl<T> MonoidWithAct for RAQRAQ<T>
     where
-        T: Clone
-            + std::ops::Add
-            + std::ops::Mul<Output = T>
-            + num::Zero
-            + num::Bounded
-            + num::FromPrimitive,
+        T: Clone + std::ops::Add + std::ops::Mul<Output = T> + num::Zero + num::FromPrimitive,
     {
         type M = algebra::predefined::Add<T>;
         type S = algebra::predefined::Add<T>;
