@@ -64,15 +64,19 @@ fn bench_segtree_binsearch(c: &mut Criterion) {
 fn bench_lazy_segtree(c: &mut Criterion) {
     let n = 10_000;
 
+    // let mut lst = LazySegTree::build_from_slice(
+    //     &gen_rnd_dat(n, -10000i64..10000),
+    //     monoid_with_act(
+    //         algebra::Add::new(),
+    //         algebra::Add::new(),
+    //         |a: &i64, b: &i64, l| a + b * l as i64,
+    //     ),
+    // );
+
     let mut lst = LazySegTree::build_from_slice(
         &gen_rnd_dat(n, -10000i64..10000),
-        monoid_with_act(
-            algebra::Add::new(),
-            algebra::Add::new(),
-            |a: &i64, b: &i64, l| a + b * l as i64,
-        ),
+        predefined::RAQRAQ::new(),
     );
-
     let q = izip!(
         gen_rnd_dat(n, -10000i64..10000i64),
         gen_rnd_dat2(n, 0..n),

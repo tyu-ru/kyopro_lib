@@ -714,8 +714,8 @@ fn test_lazysegtree_stress() {
 
 /// Predefined monoids.
 pub mod predefined {
-
-    use super::{Monoid, Semigroup};
+    use super::super::algebra;
+    use super::{Monoid, MonoidWithAct, Semigroup};
     use std::cmp::{max, min};
     use std::marker::PhantomData;
 
@@ -796,4 +796,146 @@ pub mod predefined {
         [{ (T::min_value(), 0) }],
         [a, b, { max(a, b).clone() }]
     );
+
+    pub struct Set<T: Clone> {
+        _mt: PhantomData<T>,
+    }
+    impl<T: Clone> Set<T> {
+        pub fn new() -> Self {
+            Self { _mt: PhantomData }
+        }
+    }
+    impl<T: Clone> Semigroup for Set<T> {
+        type T = T;
+        fn op(&self, _: &T, rhs: &T) -> T {
+            rhs.clone()
+        }
+    }
+
+    pub struct RSQRMinQ<T: Clone + Ord + num::Bounded> {
+        m: algebra::predefined::Min<T>,
+        s: Set<T>,
+    }
+    impl<T: Clone + Ord + num::Bounded> RSQRMinQ<T> {
+        pub fn new() -> Self {
+            Self {
+                m: algebra::predefined::Min::new(),
+                s: Set::new(),
+            }
+        }
+    }
+    impl<T: Clone + Ord + num::Bounded> MonoidWithAct for RSQRMinQ<T> {
+        type M = algebra::predefined::Min<T>;
+        type S = Set<T>;
+        fn m(&self) -> &Self::M {
+            &self.m
+        }
+        fn s(&self) -> &Self::S {
+            &self.s
+        }
+        fn act(&self, _: &T, rhs: &T, _: usize) -> T {
+            rhs.clone()
+        }
+    }
+
+    pub struct RSQRAQ<T>
+    where
+        T: Clone
+            + std::ops::Add
+            + std::ops::Mul<Output = T>
+            + num::Zero
+            + num::Bounded
+            + num::FromPrimitive,
+    {
+        m: algebra::predefined::Add<T>,
+        s: Set<T>,
+    }
+    impl<T> RSQRAQ<T>
+    where
+        T: Clone
+            + std::ops::Add
+            + std::ops::Mul<Output = T>
+            + num::Zero
+            + num::Bounded
+            + num::FromPrimitive,
+    {
+        pub fn new() -> Self {
+            Self {
+                m: algebra::predefined::Add::new(),
+                s: Set::new(),
+            }
+        }
+    }
+    impl<T> MonoidWithAct for RSQRAQ<T>
+    where
+        T: Clone
+            + std::ops::Add
+            + std::ops::Mul<Output = T>
+            + num::Zero
+            + num::Bounded
+            + num::FromPrimitive,
+    {
+        type M = algebra::predefined::Add<T>;
+        type S = Set<T>;
+
+        fn m(&self) -> &Self::M {
+            &self.m
+        }
+        fn s(&self) -> &Self::S {
+            &self.s
+        }
+        fn act(&self, _: &T, rhs: &T, len: usize) -> T {
+            rhs.clone() * T::from_usize(len).unwrap()
+        }
+    }
+
+    pub struct RAQRAQ<T>
+    where
+        T: Clone
+            + std::ops::Add
+            + std::ops::Mul<Output = T>
+            + num::Zero
+            + num::Bounded
+            + num::FromPrimitive,
+    {
+        m: algebra::predefined::Add<T>,
+    }
+    impl<T> RAQRAQ<T>
+    where
+        T: Clone
+            + std::ops::Add
+            + std::ops::Mul<Output = T>
+            + num::Zero
+            + num::Bounded
+            + num::FromPrimitive,
+    {
+        pub fn new() -> Self {
+            Self {
+                m: algebra::predefined::Add::new(),
+            }
+        }
+    }
+    impl<T> MonoidWithAct for RAQRAQ<T>
+    where
+        T: Clone
+            + std::ops::Add
+            + std::ops::Mul<Output = T>
+            + num::Zero
+            + num::Bounded
+            + num::FromPrimitive,
+    {
+        type M = algebra::predefined::Add<T>;
+        type S = algebra::predefined::Add<T>;
+
+        fn m(&self) -> &Self::M {
+            &self.m
+        }
+        fn s(&self) -> &Self::S {
+            &self.m
+        }
+
+        fn act(&self, lhs: &T, rhs: &T, len: usize) -> T {
+            lhs.clone() + rhs.clone() * T::from_usize(len).unwrap()
+        }
+    }
 }
