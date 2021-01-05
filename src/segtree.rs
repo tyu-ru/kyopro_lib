@@ -671,6 +671,61 @@ fn test_lazysegtree() {
     assert_eq!(lst.query(0..2), 5);
 }
 
+// #[cfg(test)]
+// #[test]
+// fn test_lazysegtree_max_right() {
+//     let mut lst = LazySegTree::build_from_slice(
+//         &vec![1; 9],
+//         monoid_with_act(
+//             super::algebra::predefined::Add::new(),
+//             super::algebra::predefined::Add::new(),
+//             |a: &i64, b: &i64, l| a + b * l as i64,
+//         ),
+//     );
+
+//     assert_eq!(lst.max_right(1, |&s| s <= 3), 4);
+//     // assert_eq!(lst.max_right(1, |&s| s <= 8), 16); // non-recurcive
+//     assert_eq!(lst.max_right(1, |&s| s <= 1), 2);
+//     assert_eq!(lst.max_right(0, |&s| s < 100), 16);
+//     assert_eq!(lst.max_right(5, |&s| s < 100), 16);
+//     assert_eq!(lst.max_right(0, |&s| s < 1), 0);
+//     assert_eq!(lst.max_right(1, |&s| s < 1), 1);
+//     assert_eq!(lst.max_right(9, |&s| s < 100), 16);
+//     assert_eq!(lst.max_right(16, |&s| s < 100), 16);
+
+//     lst.update_range(2..4, -1);
+//     assert_eq!(lst.max_right(0, |&s| s <= 3), 5);
+//     lst.update_range(5..7, -1);
+//     assert_eq!(lst.max_right(5, |&s| s <= 1), 8);
+// }
+// #[cfg(test)]
+// #[test]
+// fn test_lazysegtree_min_left() {
+//     let mut lst = LazySegTree::build_from_slice(
+//         &vec![1; 9],
+//         monoid_with_act(
+//             super::algebra::predefined::Add::new(),
+//             super::algebra::predefined::Add::new(),
+//             |a: &i64, b: &i64, l| a + b * l as i64,
+//         ),
+//     );
+
+//     assert_eq!(lst.min_left(6, |&s| s <= 3), 3);
+//     assert_eq!(lst.min_left(6, |&s| s <= 6), 0);
+//     assert_eq!(lst.min_left(6, |&s| s <= 1), 5);
+//     assert_eq!(lst.min_left(16, |&s| s < 100), 0);
+//     assert_eq!(lst.min_left(6, |&s| s < 100), 0);
+//     assert_eq!(lst.min_left(16, |&s| s < 1), 9);
+//     assert_eq!(lst.min_left(16, |&s| s < 0), 16);
+//     assert_eq!(lst.min_left(6, |&s| s < 1), 6);
+//     assert_eq!(lst.min_left(0, |&s| s < 100), 0);
+
+//     lst.update_range(2..4, -1);
+//     assert_eq!(lst.min_left(5, |&s| s <= 2), 1);
+//     lst.update_range(5..7, -1);
+//     assert_eq!(lst.min_left(6, |&s| s <= 1), 4);
+// }
+
 #[cfg(test)]
 #[test]
 fn test_lazysegtree_stress() {
