@@ -325,7 +325,7 @@ where
     M: Monoid<T = (T, usize)>,
     T: Clone,
 {
-    /// Constructs a new IndexedSegtree, all elements is initialized by (`id`, `index`).
+    /// Constructs a new IndexedSegTree, all elements is initialized by (`id`, `index`).
     /// The number of elements will be expanded as needed.
     ///
     /// # Time complexity
@@ -334,7 +334,7 @@ where
         let id = m.id().0;
         Self::build_from_iter((0..n).map(|i| (id.clone(), i)), m)
     }
-    /// Constructs a new Segment Tree, initialized by (`dat`, index).
+    /// Constructs a new IndexedSegTree, initialized by (`dat`, index).
     /// The number of elements will be expanded as needed.
     ///
     /// # Time complexity
@@ -342,7 +342,7 @@ where
     pub fn build_from_slice_with_index(dat: &[T], m: M) -> Self {
         Self::build_from_iter(dat.iter().cloned().enumerate().map(|(i, x)| (x, i)), m)
     }
-    /// Constructs a new Segment Tree, initialized by (`iter`, index).
+    /// Constructs a new IndexedSegTree, initialized by (`iter`, index).
     /// The number of elements will be expanded as needed.
     ///
     /// # Time complexity
@@ -454,6 +454,10 @@ fn test_segtree_stress() {
     }
 }
 
+/// Monoid with action.
+/// Action must be semigroup.
+/// # Expect
+/// `act(g, act(f, x)) == act(op(g, f), x)` `g, f <- (S, op)`
 pub trait MonoidWithAct {
     type M: Monoid;
     type S: Semigroup;
@@ -518,9 +522,45 @@ where
 
 /// Lazy evaluate Segment Tree. Supports range update and range query.
 ///
-/// # Expect
-/// (`T`, `f`) must be monoid with `id` as identity.
-/// (`U`, `g`) must be semigroup.
+/// In this data structure, the number of elements is an power of 2.
+/// The number of elements is extended to a smallest power of 2 greater than or equal to specified.
+/// (with each additional element filled with identity.)
+/// In this docment, treat *N* as the (extended) number of elements.
+///
+/// # Example
+/// ```
+/// # use kyopro_lib::segtree::*;
+/// # use kyopro_lib::algebra::{self, monoid, semigroup};
+/// // Range Set Query & Range Minimum Query
+/// let mut lst = LazySegTree::build_from_slice(
+///     &[2, 4, 3, 1, 5],
+///     monoid_with_act(
+///         monoid(std::i32::MAX, |a, b| *std::cmp::min(a, b)),
+///         semigroup(|a, b| *std::cmp::min(a, b)),
+///         |a, _: &i32, _| *a,
+///     ),
+/// );
+/// // Range Set Query & Range Minimum Query (used declared monoid)
+/// let mut lst = LazySegTree::build_from_slice(&[2,4,3,1,5], predefined::RSQRMinQ::new());
+///
+/// assert_eq!(lst.len(), 8);
+///
+/// assert_eq!(lst.query(..), 1);
+/// assert_eq!(lst.query(1..3), 3);
+///
+/// lst.update_range(2.., 10);
+/// assert_eq!(lst.query(1..4), 4);
+///
+/// let mut lst = LazySegTree::build_from_slice_with_index(
+///     &[2, 4, 2, 2, 3],
+///     monoid_with_act(
+///         predefined::MinWihtRightIndex::new(),
+///         predefined::Set::new(),
+///         |a, b, _| (*b, a.1),
+///     )
+/// );
+/// assert_eq!(lst.query_index(1..), 3);
+/// ```
 pub struct LazySegTree<MWA, M, S>
 where
     MWA: MonoidWithAct<M = M, S = S>,
@@ -588,7 +628,7 @@ where
 
     fn marge_effect(&mut self, k: usize, x: &S::T) {
         if let Some(y) = self.lazy[k].take() {
-            self.lazy[k] = Some(self.mwa.s().op(&y, x));
+            self.lazy[k] = Some(self.mwa.s().op(x, &y));
         } else {
             self.lazy[k] = Some(x.clone());
         }
@@ -650,6 +690,46 @@ where
         }
     }
 }
+
+impl<MWA, M, S, T> LazySegTree<MWA, M, S>
+where
+    MWA: MonoidWithAct<M = M, S = S>,
+    M: Monoid<T = (T, usize)>,
+    S: Semigroup,
+    T: Clone,
+{
+    /// Constructs a new IndexedLazySegTree, all elements is initialized by (`id`, `index`).
+    /// The number of elements will be expanded as needed.
+    ///
+    /// # Time complexity
+    /// Cost is `O(N)`.
+    pub fn new_with_index(n: usize, mwa: MWA) -> Self {
+        let id = mwa.m().id().0;
+        Self::build_from_iter((0..n).map(|i| (id.clone(), i)), mwa)
+    }
+    /// Constructs a new IndexedLazySegTree, initialized by (`dat`, index).
+    /// The number of elements will be expanded as needed.
+    ///
+    /// # Time complexity
+    /// Cost is `O(N)`.
+    pub fn build_from_slice_with_index(dat: &[T], mwa: MWA) -> Self {
+        Self::build_from_iter(dat.iter().cloned().enumerate().map(|(i, x)| (x, i)), mwa)
+    }
+    /// Constructs a new IndexedLazySegTree, initialized by (`iter`, index).
+    /// The number of elements will be expanded as needed.
+    ///
+    /// # Time complexity
+    /// Cost is `O(N)`.
+    pub fn build_from_iter_with_index<I: Iterator<Item = T>>(iter: I, mwa: MWA) -> Self {
+        Self::build_from_iter(iter.enumerate().map(|(i, x)| (x, i)), mwa)
+    }
+
+    /// Returns `.query().1`.
+    pub fn query_index<R: RangeBounds<usize>>(&mut self, r: R) -> usize {
+        self.query(r).1
+    }
+}
+
 #[cfg(test)]
 #[test]
 fn test_lazysegtree() {
@@ -869,8 +949,8 @@ pub mod predefined {
     }
     impl<T: Clone> Semigroup for Set<T> {
         type T = T;
-        fn op(&self, _: &T, rhs: &T) -> T {
-            rhs.clone()
+        fn op(&self, lhs: &T, _: &T) -> T {
+            lhs.clone()
         }
     }
 
