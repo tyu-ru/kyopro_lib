@@ -15,8 +15,10 @@ num-derive = "=0.3.0"
 
 [dev-dependencies]
 rand = "=0.7.3"
+criterion = "=0.3.3"
 
 [package.metadata.cargo-equip.module-dependencies]
+"crate::algebra" = []
 "crate::fewnick_tree" = []
 "crate::grid" = []
 "crate::iterator" = []
@@ -25,8 +27,12 @@ rand = "=0.7.3"
 "crate::misc" = []
 "crate::modint" = ["crate::math"]
 "crate::rle" = []
-"crate::segtree" = []
+"crate::segtree" = ["crate::algebra"]
 "crate::seive" = ["crate::rle"]
 "crate::string" = []
 "crate::tree" = []
 "crate::unionfind" = []
+
+[[bench]]
+name = "segtree"
+harness = false

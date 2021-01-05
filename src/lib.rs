@@ -1,3 +1,4 @@
+pub mod algebra;
 pub mod fewnick_tree;
 pub mod grid;
 pub mod iterator;
