@@ -218,20 +218,27 @@ where
     /// # Time complexity
     /// Cost is `O(log N)`.
     pub fn query<R: RangeBounds<usize>>(&self, r: R) -> M::T {
-        self.query_impl(1, &bound_to_range(r, 0..self.n), 0..self.n)
-    }
-    fn query_impl(&self, k: usize, r: &Range<usize>, a: Range<usize>) -> M::T {
-        if !is_overlap(r, &a) {
-            self.m.id()
-        } else if is_include(r, &a) {
-            self.dat[k].clone()
-        } else {
-            let m = (a.start + a.end) >> 1;
-            self.m.op(
-                &self.query_impl(k << 1 | 0, r, a.start..m),
-                &self.query_impl(k << 1 | 1, r, m..a.end),
-            )
+        let Range {
+            start: mut l,
+            end: mut r,
+        } = bound_to_range(r, 0..self.n);
+        let mut la = self.m.id();
+        let mut ra = self.m.id();
+        l += self.n;
+        r += self.n;
+        while l < r {
+            if l & 1 == 1 {
+                la = self.m.op(&la, &self.dat[l]);
+                l += 1;
+            }
+            if r & 1 == 1 {
+                r -= 1;
+                ra = self.m.op(&self.dat[r], &ra);
+            }
+            l >>= 1;
+            r >>= 1;
         }
+        self.m.op(&la, &ra)
     }
 
     /// Returns maximum `r` than satisfies `f(query(l..r)) == true`.
