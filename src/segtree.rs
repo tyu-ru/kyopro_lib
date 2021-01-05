@@ -1,3 +1,4 @@
+use super::algebra::*;
 use std::ops::Range;
 use std::ops::RangeBounds;
 
@@ -69,62 +70,6 @@ fn test_range_include() {
     assert_eq!(is_include(0..2, 0..3), false);
 }
 
-/// Monoid trait.
-/// (`T`, `op`) must be monoid with `id` as identity.
-///
-/// # Expect
-/// - associativity : `op(a, op(b, c)) == op(op(a, b), c)` (`a`, `b`, `c` <- Monoid)
-/// - existence identity element : `op(a, id()) == op(id(), a) == a` && id() <- Monoid
-pub trait Monoid {
-    /// Type of monoid element.
-    type T: Clone;
-    /// Returns identity element.
-    fn id(&self) -> Self::T;
-    /// Binary operation.
-    fn op(&self, lhs: &Self::T, rhs: &Self::T) -> Self::T;
-}
-
-/// Monoid that can specifiy the behavior in `Fn(..)`.
-/// # Expect
-/// - associativity : `op(a, op(b, c)) == op(op(a, b), c)` (`a`, `b`, `c` <- Monoid)
-/// - existence identity element : `op(a, id()) == op(id(), a) == a` && id() <- Monoid
-pub struct GenericMonoid<T, F>
-where
-    T: Clone,
-    F: Fn(&T, &T) -> T,
-{
-    id: T,
-    op: F,
-}
-
-impl<T, F> GenericMonoid<T, F>
-where
-    T: Clone,
-    F: Fn(&T, &T) -> T,
-{
-    /// Constructs `GenericMonoid`
-    /// # Expect
-    /// - id: identity element.
-    /// - op: binary operation.
-    pub fn new(id: T, op: F) -> Self {
-        Self { id, op }
-    }
-}
-
-impl<T, F> Monoid for GenericMonoid<T, F>
-where
-    T: Clone,
-    F: Fn(&T, &T) -> T,
-{
-    type T = T;
-    fn id(&self) -> Self::T {
-        self.id.clone()
-    }
-    fn op(&self, lhs: &Self::T, rhs: &Self::T) -> Self::T {
-        (self.op)(lhs, rhs)
-    }
-}
-
 /// Segment Tree. Supports single element update and range query.
 ///
 /// In this data structure, the number of elements is an power of 2.
@@ -135,10 +80,11 @@ where
 /// # Example
 /// ```
 /// # use kyopro_lib::segtree::*;
+/// # use kyopro_lib::algebra::{self, monoid};
 /// // Range Minimum Query
-/// let mut st = SegTree::build_from_slice(&[2,4,3,1,5], GenericMonoid::new(std::i32::MAX, |&a, &b|std::cmp::min(a,b)));
+/// let mut st = SegTree::build_from_slice(&[2,4,3,1,5], monoid(std::i32::MAX, |&a, &b|std::cmp::min(a,b)));
 /// // Range Minimum Query (used declared monoid)
-/// let mut st = SegTree::build_from_slice(&[2,4,3,1,5], monoid::Min::new());
+/// let mut st = SegTree::build_from_slice(&[2,4,3,1,5], algebra::predefined::Min::new());
 ///
 /// assert_eq!(st.len(), 8);
 ///
@@ -148,7 +94,7 @@ where
 /// st.update(3, 10);
 /// assert_eq!(st.query(..4), 2);
 ///
-/// let st = SegTree::build_from_slice_with_index(&[2, 4, 2, 2, 3], monoid::MinWihtRightIndex::new());
+/// let st = SegTree::build_from_slice_with_index(&[2, 4, 2, 2, 3], predefined::MinWihtRightIndex::new());
 /// assert_eq!(st.query_index(1..), 3);
 ///
 /// ```
@@ -199,14 +145,6 @@ where
 
     /// Constructs a new Segment Tree, initialized by `iter`.
     /// The number of elements will be expanded as needed.
-    ///
-    /// # Example
-    /// ```
-    /// # use kyopro_lib::segtree::{SegTree,GenericMonoid};
-    /// // RMQ (with index)
-    /// let st = SegTree::build_from_iter((0..5).map(|i|(0,i)), GenericMonoid::new((std::i32::MAX,0), |a,b|*std::cmp::min(a,b)));
-    /// ```
-    /// cf. `monoid::MinWithLeftIndex`
     ///
     /// # Time complexity
     /// Cost is `O(N)`.
@@ -412,9 +350,373 @@ where
     }
 }
 
+#[cfg(test)]
+#[test]
+fn test_segtree() {
+    let mut st = SegTree::build_from_slice(&[1, 2, 3, 4, 5], GenericMonoid::new(0, |&a, &b| a + b));
+    assert_eq!(st.len(), 8);
+    assert_eq!(st.get(2), &3);
+    assert_eq!(st.as_slice(), &[1, 2, 3, 4, 5, 0, 0, 0]);
+    assert_eq!(st.query(1..4), 9);
+    assert_eq!(st.query(1..=4), 14);
+    assert_eq!(st.query(..), 15);
+    assert_eq!(st.query(..4), 10);
+    assert_eq!(st.query(2..), 12);
+    assert_eq!(st.query(0..0), 0);
+
+    st.update(1, 4);
+    assert_eq!(st.query(..3), 8);
+
+    st.update_by(0, |dat| *dat += 2);
+    st.update_by_monoid_op(1, -6);
+    assert_eq!(st.query(0..4), 8);
+    assert_eq!(st.as_slice(), &[3, -2, 3, 4, 5, 0, 0, 0]);
+
+    let st = SegTree::build_from_slice(&[1, 2, 3, 4], super::algebra::predefined::Add::new());
+    assert_eq!(st.query(2..), 7);
+}
+
+#[cfg(test)]
+#[test]
+fn test_segtree_max_right() {
+    let st = SegTree::build_from_slice(&vec![1; 9], super::algebra::predefined::Add::new());
+
+    assert_eq!(st.max_right(1, |&s| s <= 3), 4);
+    // assert_eq!(st.max_right(1, |&s| s <= 8), 16); // non-recurcive
+    assert_eq!(st.max_right(1, |&s| s <= 1), 2);
+    assert_eq!(st.max_right(0, |&s| s < 100), 16);
+    assert_eq!(st.max_right(5, |&s| s < 100), 16);
+    assert_eq!(st.max_right(0, |&s| s < 1), 0);
+    assert_eq!(st.max_right(1, |&s| s < 1), 1);
+    assert_eq!(st.max_right(9, |&s| s < 100), 16);
+    assert_eq!(st.max_right(16, |&s| s < 100), 16);
+}
+#[cfg(test)]
+#[test]
+fn test_segtree_min_left() {
+    let st = SegTree::build_from_slice(&vec![1; 9], super::algebra::predefined::Add::new());
+
+    assert_eq!(st.min_left(6, |&s| s <= 3), 3);
+    assert_eq!(st.min_left(6, |&s| s <= 6), 0);
+    assert_eq!(st.min_left(6, |&s| s <= 1), 5);
+    assert_eq!(st.min_left(16, |&s| s < 100), 0);
+    assert_eq!(st.min_left(6, |&s| s < 100), 0);
+    assert_eq!(st.min_left(16, |&s| s < 1), 9);
+    assert_eq!(st.min_left(16, |&s| s < 0), 16);
+    assert_eq!(st.min_left(6, |&s| s < 1), 6);
+    assert_eq!(st.min_left(0, |&s| s < 100), 0);
+}
+
+#[cfg(test)]
+#[test]
+fn test_segtree_indexed_initialize() {
+    let st =
+        SegTree::build_from_slice_with_index(&[3, 2, 2, 4, 1], predefined::MinWihtLeftIndex::new());
+    assert_eq!(st.query(..), (1, 4));
+    assert_eq!(st.query(2..4), (2, 2));
+    assert_eq!(st.query(1..4), (2, 1));
+    assert_eq!(st.query_index(..), 4);
+    assert_eq!(st.query_index(2..4), 2);
+    assert_eq!(st.query_index(1..4), 1);
+}
+
+#[cfg(test)]
+#[test]
+fn test_segtree_stress() {
+    use rand::distributions::{Distribution, Uniform};
+    let n = 10_000;
+    let d = Uniform::from(0..n);
+    let d2 = Uniform::from(-(n as i64)..=n as i64);
+    let mut rng = rand::thread_rng();
+
+    let mut st = SegTree::new(n, super::algebra::predefined::Add::new());
+    let mut stup = vec![0; n];
+
+    for _ in 0..n {
+        let i = d.sample(&mut rng);
+        let c = d2.sample(&mut rng);
+        stup[i] = c;
+        st.update(i, c);
+
+        let mut a = d.sample(&mut rng);
+        let mut b = d.sample(&mut rng);
+        if a > b {
+            std::mem::swap(&mut a, &mut b);
+        }
+        assert_eq!(st.query(a..b), stup[a..b].iter().sum::<i64>());
+    }
+}
+
+pub trait MonoidWithAct {
+    type M: Monoid;
+    type S: Semigroup;
+
+    fn m(&self) -> &Self::M;
+    fn s(&self) -> &Self::S;
+    fn act(
+        &self,
+        lhs: &<Self::M as Semigroup>::T,
+        rhs: &<Self::S as Semigroup>::T,
+        len: usize,
+    ) -> <Self::M as Semigroup>::T;
+}
+
+pub struct GenericMonoidWithAct<M, S, F>
+where
+    M: Monoid,
+    S: Semigroup,
+    F: Fn(&M::T, &S::T, usize) -> M::T,
+{
+    m: M,
+    s: S,
+    act: F,
+}
+impl<M, S, F> GenericMonoidWithAct<M, S, F>
+where
+    M: Monoid,
+    S: Semigroup,
+    F: Fn(&M::T, &S::T, usize) -> M::T,
+{
+    pub fn new(m: M, s: S, act: F) -> Self {
+        Self { m, s, act }
+    }
+}
+pub fn monoid_with_act<M, S, F>(m: M, s: S, act: F) -> GenericMonoidWithAct<M, S, F>
+where
+    M: Monoid,
+    S: Semigroup,
+    F: Fn(&M::T, &S::T, usize) -> M::T,
+{
+    GenericMonoidWithAct { m, s, act }
+}
+impl<M, S, F> MonoidWithAct for GenericMonoidWithAct<M, S, F>
+where
+    M: Monoid,
+    S: Semigroup,
+    F: Fn(&M::T, &S::T, usize) -> M::T,
+{
+    type M = M;
+    type S = S;
+
+    fn m(&self) -> &M {
+        &self.m
+    }
+    fn s(&self) -> &S {
+        &self.s
+    }
+    fn act(&self, lhs: &M::T, rhs: &S::T, len: usize) -> M::T {
+        (self.act)(lhs, rhs, len)
+    }
+}
+
+/// Lazy evaluate Segment Tree. Supports range update and range query.
+///
+/// # Expect
+/// (`T`, `f`) must be monoid with `id` as identity.
+/// (`U`, `g`) must be semigroup.
+pub struct LazySegTree<MWA, M, S>
+where
+    MWA: MonoidWithAct<M = M, S = S>,
+    M: Monoid,
+    S: Semigroup,
+{
+    n: usize,
+    mwa: MWA,
+    dat: Vec<M::T>,
+    lazy: Vec<Option<S::T>>,
+}
+
+impl<MWA, M, S> LazySegTree<MWA, M, S>
+where
+    MWA: MonoidWithAct<M = M, S = S>,
+    M: Monoid,
+    S: Semigroup,
+{
+    /// Constructs a new Lazy Segment Tree, all elements is initialized by `id`.
+    /// The number of elements will be expanded as needed.
+    ///
+    /// # Time complexity
+    /// Cost is `O(N)`.
+    pub fn new(n: usize, mwa: MWA) -> Self {
+        let n = n.next_power_of_two();
+        let id = mwa.m().id();
+        Self {
+            n,
+            mwa,
+            dat: vec![id; 2 * n],
+            lazy: vec![None; 2 * n],
+        }
+    }
+
+    /// Constructs a new Lazy Segment Tree, initialized by `dat`.
+    /// The number of elements will be expanded as needed.
+    ///
+    /// # Time complexity
+    /// Cost is `O(N)`.
+    pub fn build_from_slice(dat: &[M::T], mwa: MWA) -> Self {
+        let mut lst = Self::new(dat.len(), mwa);
+        for i in 0..dat.len() {
+            lst.dat[lst.n + i] = dat[i].clone();
+        }
+        for i in (1..lst.n).rev() {
+            lst.dat[i] = lst.mwa.m().op(&lst.dat[i << 1], &lst.dat[i << 1 | 1]);
+        }
+        lst
+    }
+
+    /// Constructs a new Lazy Segment Tree, initialized by `iter`.
+    /// The number of elements will be expanded as needed.
+    ///
+    /// # Time complexity
+    /// Cost is `O(N)`.
+    pub fn build_from_iter<I: Iterator<Item = M::T>>(iter: I, mwa: MWA) -> Self {
+        use itertools::Itertools;
+        Self::build_from_slice(&iter.collect_vec(), mwa)
+    }
+
+    /// Returns the number of elements in Segment Tree.
+    pub fn len(&self) -> usize {
+        self.n
+    }
+
+    fn marge_effect(&mut self, k: usize, x: &S::T) {
+        if let Some(y) = self.lazy[k].take() {
+            self.lazy[k] = Some(self.mwa.s().op(&y, x));
+        } else {
+            self.lazy[k] = Some(x.clone());
+        }
+    }
+    fn eval(&mut self, k: usize, l: usize) {
+        if let Some(x) = self.lazy[k].take() {
+            self.dat[k] = self.mwa.act(&self.dat[k], &x, l);
+            if k < self.n {
+                self.marge_effect(k << 1 | 0, &x);
+                self.marge_effect(k << 1 | 1, &x);
+            }
+        }
+    }
+
+    /// Update range `r`
+    /// # Time complexity
+    /// Cost is `O(log N)`.
+    pub fn update_range<R: RangeBounds<usize>>(&mut self, r: R, x: S::T) {
+        self.update_range_impl(&bound_to_range(r, 0..self.n), 1, 0..self.n, &x)
+    }
+    fn update_range_impl(&mut self, r: &Range<usize>, k: usize, a: Range<usize>, x: &S::T) {
+        if !is_overlap(r, &a) {
+            self.eval(k, a.end - a.start);
+            return;
+        }
+        if is_include(r, &a) {
+            self.marge_effect(k, x);
+            self.eval(k, a.end - a.start);
+            return;
+        }
+        let m = (a.start + a.end) / 2;
+        self.eval(k, a.end - a.start);
+        self.update_range_impl(r, k << 1 | 0, a.start..m, x);
+        self.update_range_impl(r, k << 1 | 1, m..a.end, x);
+        self.dat[k] = self
+            .mwa
+            .m()
+            .op(&self.dat[k << 1 | 0], &self.dat[k << 1 | 1]);
+    }
+
+    /// Range query. Returns `op(r.start .. r.end)`.
+    /// # Time complexity
+    /// Cost is `O(log N)`.
+    pub fn query<R: RangeBounds<usize>>(&mut self, r: R) -> M::T {
+        self.query_impl(&bound_to_range(r, 0..self.n), 1, 0..self.n)
+    }
+    fn query_impl(&mut self, r: &Range<usize>, k: usize, a: Range<usize>) -> M::T {
+        if !is_overlap(r, &a) {
+            self.mwa.m().id()
+        } else if is_include(r, &a) {
+            self.eval(k, a.end - a.start);
+            self.dat[k].clone()
+        } else {
+            let m = (a.start + a.end) / 2;
+            self.eval(k, a.end - a.start);
+            let x = self.query_impl(r, k << 1 | 0, a.start..m);
+            let y = self.query_impl(r, k << 1 | 1, m..a.end);
+            self.mwa.m().op(&x, &y)
+        }
+    }
+}
+#[cfg(test)]
+#[test]
+fn test_lazysegtree() {
+    let mut lst = LazySegTree::build_from_slice(
+        &[1, 2, 3, 4, 5],
+        monoid_with_act(
+            super::algebra::predefined::Add::new(),
+            super::algebra::predefined::Add::new(),
+            |&a, &b, l| a + b * l as i32,
+        ),
+    );
+    assert_eq!(lst.len(), 8);
+    assert_eq!(lst.query(1..4), 9);
+    assert_eq!(lst.query(..), 15);
+    assert_eq!(lst.query(..4), 10);
+    assert_eq!(lst.query(2..), 12);
+    assert_eq!(lst.query(0..0), 0);
+
+    lst.update_range(.., 1);
+    assert_eq!(lst.query(..), 23);
+    assert_eq!(lst.query(0..4), 14);
+
+    lst.update_range(.., -1);
+    lst.update_range(1..4, 2);
+    assert_eq!(lst.query(1..4), 15);
+    assert_eq!(lst.query(0..2), 5);
+}
+
+#[cfg(test)]
+#[test]
+fn test_lazysegtree_stress() {
+    use rand::distributions::{Distribution, Uniform};
+    let n = 10_000;
+    let d = Uniform::from(0..n);
+    let d2 = Uniform::from(-(n as i64)..=n as i64);
+    let mut rng = rand::thread_rng();
+
+    let mut lst = LazySegTree::new(
+        n,
+        monoid_with_act(
+            super::algebra::predefined::Add::new(),
+            super::algebra::predefined::Add::new(),
+            |&a: &i64, &b: &i64, l| a + b * l as i64,
+        ),
+    );
+    let mut stup = vec![0; n];
+
+    for _ in 0..n {
+        let mut a = d.sample(&mut rng);
+        let mut b = d.sample(&mut rng);
+        if a > b {
+            std::mem::swap(&mut a, &mut b);
+        }
+
+        let c = d2.sample(&mut rng);
+        for x in &mut stup[a..b] {
+            *x += c;
+        }
+        lst.update_range(a..b, c);
+
+        let mut a = d.sample(&mut rng);
+        let mut b = d.sample(&mut rng);
+        if a > b {
+            std::mem::swap(&mut a, &mut b);
+        }
+        assert_eq!(lst.query(a..b), stup[a..b].iter().sum());
+    }
+}
+
 /// Predefined monoids.
-pub mod monoid {
-    use super::Monoid;
+pub mod predefined {
+
+    use super::{Monoid, Semigroup};
+    use std::cmp::{max, min};
     use std::marker::PhantomData;
 
     macro_rules! decl_monoid {
@@ -432,89 +734,23 @@ pub mod monoid {
                     Self{_mt:PhantomData}
                 }
             }
-            impl<T> Monoid for $name<T>
+            impl<T> Semigroup for $name<T>
             where
                 T: Clone, $(T : $traits),*
             {
                 type T = $t;
-                fn id(&self) -> Self::T { $id }
                 fn op(&self, $lhs: &Self::T, $rhs: &Self::T) -> Self::T {
                     $op
                 }
             }
+            impl<T> Monoid for $name<T>
+            where
+                T: Clone, $(T : $traits),*
+            {
+                fn id(&self) -> Self::T { $id }
+            }
         };
     }
-
-    decl_monoid!(
-        "Add monoid",
-        Add,
-        [num::Zero, std::ops::Add],
-        [{ T::zero() }],
-        [a, b, { a.clone() + b.clone() }]
-    );
-    decl_monoid!(
-        "Multiple monoid",
-        Mul,
-        [num::One, std::ops::Mul],
-        [{ T::one() }],
-        [a, b, { a.clone() * b.clone() }]
-    );
-    decl_monoid!(
-        "Greatest common divisor moonoid",
-        GCD,
-        [num::Integer],
-        [{ T::zero() }],
-        [a, b, { num::integer::gcd(a.clone(), b.clone()) }]
-    );
-    decl_monoid!(
-        "Least common multiple monoid",
-        LCM,
-        [num::Integer],
-        [{ T::one() }],
-        [a, b, { num::integer::lcm(a.clone(), b.clone()) }]
-    );
-
-    use std::cmp::{max, min};
-    decl_monoid!(
-        "Minimum value monoid",
-        Min,
-        [num::Bounded, Ord],
-        [{ T::max_value() }],
-        [a, b, { min(a, b).clone() }]
-    );
-    decl_monoid!(
-        "Maximum value monoid",
-        Max,
-        [num::Bounded, Ord],
-        [{ T::min_value() }],
-        [a, b, { max(a, b).clone() }]
-    );
-    decl_monoid!(
-        "Minimun value monoid for types for which `Ord` trait is not impl.",
-        MinPartialOrd,
-        [num::Bounded, PartialOrd],
-        [{ T::max_value() }],
-        [a, b, {
-            if a < b {
-                a.clone()
-            } else {
-                b.clone()
-            }
-        }]
-    );
-    decl_monoid!(
-        "Maximum value monoid for types for which `Ord` trait is not impl.",
-        MaxPartialOrd,
-        [num::Bounded, PartialOrd],
-        [{ T::min_value() }],
-        [a, b, {
-            if a > b {
-                a.clone()
-            } else {
-                b.clone()
-            }
-        }]
-    );
 
     decl_monoid!(
         "Minimun value monoid with leftmost index. <br> # See also <br> `SegTree::new_with_index()`",
@@ -560,302 +796,4 @@ pub mod monoid {
         [{ (T::min_value(), 0) }],
         [a, b, { max(a, b).clone() }]
     );
-}
-
-#[cfg(test)]
-#[test]
-fn test_segtree() {
-    let mut st = SegTree::build_from_slice(&[1, 2, 3, 4, 5], GenericMonoid::new(0, |&a, &b| a + b));
-    assert_eq!(st.len(), 8);
-    assert_eq!(st.get(2), &3);
-    assert_eq!(st.as_slice(), &[1, 2, 3, 4, 5, 0, 0, 0]);
-    assert_eq!(st.query(1..4), 9);
-    assert_eq!(st.query(1..=4), 14);
-    assert_eq!(st.query(..), 15);
-    assert_eq!(st.query(..4), 10);
-    assert_eq!(st.query(2..), 12);
-    assert_eq!(st.query(0..0), 0);
-
-    st.update(1, 4);
-    assert_eq!(st.query(..3), 8);
-
-    st.update_by(0, |dat| *dat += 2);
-    st.update_by_monoid_op(1, -6);
-    assert_eq!(st.query(0..4), 8);
-    assert_eq!(st.as_slice(), &[3, -2, 3, 4, 5, 0, 0, 0]);
-
-    let st = SegTree::build_from_slice(&[1, 2, 3, 4], monoid::Add::new());
-    assert_eq!(st.query(2..), 7);
-}
-
-#[cfg(test)]
-#[test]
-fn test_segtree_max_right() {
-    let st = SegTree::build_from_slice(&vec![1; 9], monoid::Add::new());
-
-    assert_eq!(st.max_right(1, |&s| s <= 3), 4);
-    // assert_eq!(st.max_right(1, |&s| s <= 8), 16); // non-recurcive
-    assert_eq!(st.max_right(1, |&s| s <= 1), 2);
-    assert_eq!(st.max_right(0, |&s| s < 100), 16);
-    assert_eq!(st.max_right(5, |&s| s < 100), 16);
-    assert_eq!(st.max_right(0, |&s| s < 1), 0);
-    assert_eq!(st.max_right(1, |&s| s < 1), 1);
-    assert_eq!(st.max_right(9, |&s| s < 100), 16);
-    assert_eq!(st.max_right(16, |&s| s < 100), 16);
-}
-#[cfg(test)]
-#[test]
-fn test_segtree_min_left() {
-    let st = SegTree::build_from_slice(&vec![1; 9], monoid::Add::new());
-
-    assert_eq!(st.min_left(6, |&s| s <= 3), 3);
-    assert_eq!(st.min_left(6, |&s| s <= 6), 0);
-    assert_eq!(st.min_left(6, |&s| s <= 1), 5);
-    assert_eq!(st.min_left(16, |&s| s < 100), 0);
-    assert_eq!(st.min_left(6, |&s| s < 100), 0);
-    assert_eq!(st.min_left(16, |&s| s < 1), 9);
-    assert_eq!(st.min_left(16, |&s| s < 0), 16);
-    assert_eq!(st.min_left(6, |&s| s < 1), 6);
-    assert_eq!(st.min_left(0, |&s| s < 100), 0);
-}
-
-#[cfg(test)]
-#[test]
-fn test_segtree_indexed_initialize() {
-    let st =
-        SegTree::build_from_slice_with_index(&[3, 2, 2, 4, 1], monoid::MinWihtLeftIndex::new());
-    assert_eq!(st.query(..), (1, 4));
-    assert_eq!(st.query(2..4), (2, 2));
-    assert_eq!(st.query(1..4), (2, 1));
-    assert_eq!(st.query_index(..), 4);
-    assert_eq!(st.query_index(2..4), 2);
-    assert_eq!(st.query_index(1..4), 1);
-}
-
-#[cfg(test)]
-#[test]
-fn test_segtree_stress() {
-    use rand::distributions::{Distribution, Uniform};
-    let n = 10_000;
-    let d = Uniform::from(0..n);
-    let d2 = Uniform::from(-(n as i64)..=n as i64);
-    let mut rng = rand::thread_rng();
-
-    let mut st = SegTree::new(n, monoid::Add::new());
-    let mut stup = vec![0; n];
-
-    for _ in 0..n {
-        let i = d.sample(&mut rng);
-        let c = d2.sample(&mut rng);
-        stup[i] = c;
-        st.update(i, c);
-
-        let mut a = d.sample(&mut rng);
-        let mut b = d.sample(&mut rng);
-        if a > b {
-            std::mem::swap(&mut a, &mut b);
-        }
-        assert_eq!(st.query(a..b), stup[a..b].iter().sum());
-    }
-}
-
-/// Lazy evaluate Segment Tree. Supports range update and range query.
-///
-/// # Expect
-/// (`T`, `f`) must be monoid with `id` as identity.
-/// (`U`, `g`) must be semigroup.
-pub struct LazySegTree<T, U, F, G, H> {
-    n: usize,
-    id: T,
-    dat: Vec<T>,
-    lazy: Vec<Option<U>>,
-    f: F,
-    g: G,
-    h: H,
-}
-
-impl<T, U, F, G, H> LazySegTree<T, U, F, G, H>
-where
-    T: Clone,
-    U: Clone,
-    F: Fn(&T, &T) -> T,
-    G: Fn(&U, &U) -> U,
-    H: Fn(&T, &U, usize) -> T,
-{
-    /// Constructs a new Lazy Segment Tree, all elements is initialized by `id`.
-    /// The number of elements will be expanded as needed.
-    ///
-    /// # Time complexity
-    /// Cost is `O(N)`.
-    pub fn new(n: usize, id: T, f: F, g: G, h: H) -> Self {
-        let n = n.next_power_of_two();
-        Self {
-            n: n,
-            id: id.clone(),
-            dat: vec![id; 2 * n - 1],
-            lazy: vec![None; 2 * n - 1],
-            f: f,
-            g: g,
-            h: h,
-        }
-    }
-
-    /// Constructs a new Lazy Segment Tree, initialized by `dat`.
-    /// The number of elements will be expanded as needed.
-    ///
-    /// # Time complexity
-    /// Cost is `O(N)`.
-    pub fn build_from_slice(dat: &[T], id: T, f: F, g: G, h: H) -> Self {
-        let mut lst = Self::new(dat.len(), id, f, g, h);
-        for i in 0..dat.len() {
-            lst.dat[lst.n - 1 + i] = dat[i].clone();
-        }
-        for i in (0..lst.n - 1).rev() {
-            lst.dat[i] = (lst.f)(&lst.dat[i * 2 + 1], &lst.dat[i * 2 + 2]);
-        }
-        lst
-    }
-
-    /// Constructs a new Lazy Segment Tree, initialized by `iter`.
-    /// The number of elements will be expanded as needed.
-    ///
-    /// # Time complexity
-    /// Cost is `O(N)`.
-    pub fn build_from_iter<I: Iterator<Item = T>>(iter: I, id: T, f: F, g: G, h: H) -> Self {
-        use itertools::Itertools;
-        Self::build_from_slice(&iter.collect_vec(), id, f, g, h)
-    }
-
-    /// Returns the number of elements in Segment Tree.
-    pub fn len(&self) -> usize {
-        self.n
-    }
-
-    fn marge_effect(&mut self, k: usize, x: &U) {
-        if let Some(y) = self.lazy[k].take() {
-            self.lazy[k] = Some((self.g)(&y, x));
-        } else {
-            self.lazy[k] = Some(x.clone());
-        }
-    }
-    fn eval(&mut self, k: usize, l: usize) {
-        if let Some(x) = self.lazy[k].take() {
-            self.dat[k] = (self.h)(&self.dat[k], &x, l);
-            if k < self.n - 1 {
-                self.marge_effect(k * 2 + 1, &x);
-                self.marge_effect(k * 2 + 2, &x);
-            }
-        }
-    }
-
-    /// Update range `r`
-    /// # Time complexity
-    /// Cost is `O(log N)`.
-    pub fn update_range<R: RangeBounds<usize>>(&mut self, r: R, x: U) {
-        self.update_range_impl(&bound_to_range(r, 0..self.n), 0, 0..self.n, &x)
-    }
-    fn update_range_impl(&mut self, r: &Range<usize>, k: usize, a: Range<usize>, x: &U) {
-        if !is_overlap(r, &a) {
-            self.eval(k, a.end - a.start);
-            return;
-        }
-        if is_include(r, &a) {
-            self.marge_effect(k, x);
-            self.eval(k, a.end - a.start);
-            return;
-        }
-        let m = (a.start + a.end) / 2;
-        self.eval(k, a.end - a.start);
-        self.update_range_impl(r, k * 2 + 1, a.start..m, x);
-        self.update_range_impl(r, k * 2 + 2, m..a.end, x);
-        self.dat[k] = (self.f)(&self.dat[k * 2 + 1], &self.dat[k * 2 + 2]);
-    }
-
-    /// Range query. Returns `op(r.start .. r.end)`.
-    /// # Time complexity
-    /// Cost is `O(log N)`.
-    pub fn query<R: RangeBounds<usize>>(&mut self, r: R) -> T {
-        self.query_impl(&bound_to_range(r, 0..self.n), 0, 0..self.n)
-    }
-    fn query_impl(&mut self, r: &Range<usize>, k: usize, a: Range<usize>) -> T {
-        if !is_overlap(r, &a) {
-            self.id.clone()
-        } else if is_include(r, &a) {
-            self.eval(k, a.end - a.start);
-            self.dat[k].clone()
-        } else {
-            let m = (a.start + a.end) / 2;
-            self.eval(k, a.end - a.start);
-            let x = self.query_impl(r, k * 2 + 1, a.start..m);
-            let y = self.query_impl(r, k * 2 + 2, m..a.end);
-            (self.f)(&x, &y)
-        }
-    }
-}
-
-#[cfg(test)]
-#[test]
-fn test_lazysegtree() {
-    let mut lst = LazySegTree::build_from_slice(
-        &[1, 2, 3, 4, 5],
-        0,
-        |&a, &b| a + b,
-        |&a, &b| a + b,
-        |&a, &b, l| a + b * l as i32,
-    );
-    assert_eq!(lst.len(), 8);
-    assert_eq!(lst.query(1..4), 9);
-    assert_eq!(lst.query(..), 15);
-    assert_eq!(lst.query(..4), 10);
-    assert_eq!(lst.query(2..), 12);
-    assert_eq!(lst.query(0..0), 0);
-
-    lst.update_range(.., 1);
-    assert_eq!(lst.query(..), 23);
-    assert_eq!(lst.query(0..4), 14);
-
-    lst.update_range(.., -1);
-    lst.update_range(1..4, 2);
-    assert_eq!(lst.query(1..4), 15);
-    assert_eq!(lst.query(0..2), 5);
-}
-
-#[cfg(test)]
-#[test]
-fn test_lazysegtree_stress() {
-    use rand::distributions::{Distribution, Uniform};
-    let n = 10_000;
-    let d = Uniform::from(0..n);
-    let d2 = Uniform::from(-(n as i64)..=n as i64);
-    let mut rng = rand::thread_rng();
-
-    let mut lst = LazySegTree::new(
-        n,
-        0,
-        |&a, &b| a + b,
-        |&a, &b| a + b,
-        |&a, &b, l| a + b * l as i64,
-    );
-    let mut stup = vec![0; n];
-
-    for _ in 0..n {
-        let mut a = d.sample(&mut rng);
-        let mut b = d.sample(&mut rng);
-        if a > b {
-            std::mem::swap(&mut a, &mut b);
-        }
-
-        let c = d2.sample(&mut rng);
-        for x in &mut stup[a..b] {
-            *x += c;
-        }
-        lst.update_range(a..b, c);
-
-        let mut a = d.sample(&mut rng);
-        let mut b = d.sample(&mut rng);
-        if a > b {
-            std::mem::swap(&mut a, &mut b);
-        }
-        assert_eq!(lst.query(a..b), stup[a..b].iter().sum());
-    }
 }

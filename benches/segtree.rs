@@ -1,7 +1,8 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use itertools::{izip, Itertools};
 
-use kyopro_lib::segtree::{monoid, LazySegTree, SegTree};
+use kyopro_lib::algebra::predefined as algebra;
+use kyopro_lib::segtree::*;
 
 fn gen_rnd_dat<T>(n: usize, range: std::ops::Range<T>) -> Vec<T>
 where
@@ -28,7 +29,7 @@ fn bench_segtree(c: &mut Criterion) {
     )
     .collect_vec();
 
-    let mut st = SegTree::build_from_slice(&gen_rnd_dat(n, -10000..10000), monoid::Add::new());
+    let mut st = SegTree::build_from_slice(&gen_rnd_dat(n, -10000..10000), algebra::Add::new());
     c.bench_function("segtree", |b| {
         b.iter(|| {
             for &(i, c, (a, b)) in &q {
@@ -48,7 +49,7 @@ fn bench_segtree_binsearch(c: &mut Criterion) {
         gen_rnd_dat(n, 0..10000)
     )
     .collect_vec();
-    let mut st = SegTree::build_from_slice(&gen_rnd_dat(n, 0..10000), monoid::Add::new());
+    let mut st = SegTree::build_from_slice(&gen_rnd_dat(n, 0..10000), algebra::Add::new());
     c.bench_function("segtree-binsearch", |b| {
         b.iter(|| {
             for &(i, x, j, y) in &q {
@@ -65,10 +66,11 @@ fn bench_lazy_segtree(c: &mut Criterion) {
 
     let mut lst = LazySegTree::build_from_slice(
         &gen_rnd_dat(n, -10000i64..10000),
-        0,
-        |&a, &b| a + b,
-        |&a, &b| a + b,
-        |&a, &b, l| a + b * l as i64,
+        monoid_with_act(
+            algebra::Add::new(),
+            algebra::Add::new(),
+            |a: &i64, b: &i64, l| a + b * l as i64,
+        ),
     );
 
     let q = izip!(
