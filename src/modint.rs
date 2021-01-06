@@ -87,6 +87,15 @@ def_from_trait!(i, i32);
 def_from_trait!(i, i64);
 def_from_trait!(i, isize);
 
+impl<M: Modulation> num::FromPrimitive for ModInt<M> {
+    fn from_i64(n: i64) -> Option<Self> {
+        Some(n.into())
+    }
+    fn from_u64(n: u64) -> Option<Self> {
+        Some(n.into())
+    }
+}
+
 impl<M: Modulation> num::Zero for ModInt<M> {
     fn zero() -> Self {
         Self::new_uncheck(0)
