@@ -233,6 +233,27 @@ decl_ops_from_op_assign! {
     impl Div, div from DivAssign, div_assign
 }
 
+impl<M: Modulation> std::iter::Sum for ModInt<M> {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(Self::new_uncheck(0), |s, x| s + x)
+    }
+}
+impl<'a, M: Modulation> std::iter::Sum<&'a Self> for ModInt<M> {
+    fn sum<I: Iterator<Item = &'a Self>>(iter: I) -> Self {
+        iter.fold(Self::new_uncheck(0), |s, x| s + x)
+    }
+}
+impl<M: Modulation> std::iter::Product for ModInt<M> {
+    fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(Self::new_uncheck(1), |s, x| s * x)
+    }
+}
+impl<'a, M: Modulation> std::iter::Product<&'a Self> for ModInt<M> {
+    fn product<I: Iterator<Item = &'a Self>>(iter: I) -> Self {
+        iter.fold(Self::new_uncheck(1), |s, x| s * x)
+    }
+}
+
 impl<M: Modulation> ModInt<M> {
     pub fn pow(&self, mut n: u64) -> Self {
         let mut res = Self::new_uncheck(1);
@@ -395,6 +416,13 @@ mod test {
     #[test]
     fn test_display() {
         assert_eq!(format!("{}", Mint::new(3)), "3");
+    }
+
+    #[test]
+    fn test_iter_fold() {
+        let dat = &[Mint::new(1), Mint::new(2), Mint::new(3), Mint::new(4)];
+        assert_eq!(dat.iter().sum::<Mint>(), Mint::new(10));
+        assert_eq!(dat.iter().product::<Mint>(), Mint::new(24));
     }
 }
 
