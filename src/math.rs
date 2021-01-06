@@ -36,6 +36,64 @@ fn test_pow_mod() {
     assert_eq!(pow_mod(10u64.pow(15), 100, 10), 0);
 }
 
+pub fn enumerate_divisor(x: u64) -> Vec<u64> {
+    let mut res = vec![];
+    let mut res2 = vec![];
+    for i in 1.. {
+        if i * i > x {
+            break;
+        }
+        if x % i == 0 {
+            res.push(i);
+            if i * i != x {
+                res2.push(x / i);
+            }
+        }
+    }
+    res2.reverse();
+    res.extend(res2);
+    res
+}
+
+#[cfg(test)]
+#[test]
+fn test_enumerate_divisor() {
+    assert_eq!(enumerate_divisor(1), &[1]);
+    assert_eq!(enumerate_divisor(3), &[1, 3]);
+    assert_eq!(enumerate_divisor(12), &[1, 2, 3, 4, 6, 12]);
+    assert_eq!(enumerate_divisor(36), &[1, 2, 3, 4, 6, 9, 12, 18, 36]);
+}
+
+pub fn enumerate_prime_factor(mut x: u64) -> Vec<(u64, usize)> {
+    let mut res = vec![];
+    for p in 2.. {
+        if p * p > x {
+            break;
+        }
+        let mut e = 0;
+        while x % p == 0 {
+            x /= p;
+            e += 1;
+        }
+        if e != 0 {
+            res.push((p, e));
+        }
+    }
+    if x != 1 {
+        res.push((x, 1));
+    }
+    res
+}
+
+#[cfg(test)]
+#[test]
+fn test_enumerate_prime_factor() {
+    assert_eq!(enumerate_prime_factor(1), &[]);
+    assert_eq!(enumerate_prime_factor(2), &[(2, 1)]);
+    assert_eq!(enumerate_prime_factor(12), &[(2, 2), (3, 1)]);
+    assert_eq!(enumerate_prime_factor(1_000_000_007), &[(1_000_000_007, 1)]);
+}
+
 pub fn euler_totient(mut x: u64) -> u64 {
     let mut res = 1;
     for p in 2.. {
