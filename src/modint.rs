@@ -285,7 +285,7 @@ impl<M: Modulation> ModInt<M> {
             neg[i] = neg[i + 1] * Self::new(i as u64 + 1);
         }
 
-        Factorial { pos: pos, neg: neg }
+        Factorial { pos, neg }
     }
     pub fn gen_inv(n: u64) -> Vec<Self> {
         let mut res = vec![Self::new_uncheck(1); (n + 1) as usize];
