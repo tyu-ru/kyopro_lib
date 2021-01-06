@@ -81,6 +81,24 @@ def_from_trait!(i, i32);
 def_from_trait!(i, i64);
 def_from_trait!(i, isize);
 
+impl<M: Modulation> num::Zero for ModInt<M> {
+    fn zero() -> Self {
+        Self::new_uncheck(0)
+    }
+    fn is_zero(&self) -> bool {
+        self.x == 0
+    }
+}
+
+impl<M: Modulation> num::One for ModInt<M> {
+    fn one() -> Self {
+        Self::new_uncheck(1)
+    }
+    fn is_one(&self) -> bool {
+        self.x == 1
+    }
+}
+
 impl<M: Modulation> std::ops::Neg for ModInt<M> {
     type Output = Self;
     #[inline]
