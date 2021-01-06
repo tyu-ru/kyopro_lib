@@ -12,6 +12,12 @@ pub struct ModInt<M: Modulation> {
     phantom: PhantomData<M>,
 }
 
+impl<M: Modulation> std::str::FromStr for ModInt<M> {
+    type Err = <i64 as std::str::FromStr>::Err;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        s.parse().map(|x| Self::from_signed(x))
+    }
+}
 impl<M: Modulation> std::fmt::Display for ModInt<M> {
     fn fmt(&self, dest: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         write!(dest, "{}", self.x)
