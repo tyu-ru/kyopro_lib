@@ -1,9 +1,13 @@
-/// f(i) == true となる 最小のi
-pub fn lower_bound<I, F>(mut l: I, mut r: I, mut f: F) -> I
+/// Returns the smallest `i` that is `f(i) == true`
+pub fn lower_bound<I, F>(r: std::ops::Range<I>, mut f: F) -> I
 where
     I: num::traits::PrimInt,
     F: FnMut(I) -> bool,
 {
+    let std::ops::Range {
+        start: mut l,
+        end: mut r,
+    } = r;
     while l != r {
         let m = l + ((r - l) >> 1);
         if f(m) {
@@ -21,18 +25,18 @@ fn test_lower_bound() {
     let arr = &[0, 2, 4, 6, 8];
     let g = |x| move |i| x <= arr[i];
 
-    assert_eq!(lower_bound(0, arr.len(), g(0)), 0);
-    assert_eq!(lower_bound(0, arr.len(), g(4)), 2);
-    assert_eq!(lower_bound(0, arr.len(), g(8)), 4);
+    assert_eq!(lower_bound(0..arr.len(), g(0)), 0);
+    assert_eq!(lower_bound(0..arr.len(), g(4)), 2);
+    assert_eq!(lower_bound(0..arr.len(), g(8)), 4);
 
-    assert_eq!(lower_bound(0, arr.len(), g(-1)), 0);
-    assert_eq!(lower_bound(0, arr.len(), g(1)), 1);
-    assert_eq!(lower_bound(0, arr.len(), g(9)), 5);
+    assert_eq!(lower_bound(0..arr.len(), g(-1)), 0);
+    assert_eq!(lower_bound(0..arr.len(), g(1)), 1);
+    assert_eq!(lower_bound(0..arr.len(), g(9)), 5);
 }
 #[cfg(test)]
 #[test]
 fn test_lower_bound2() {
-    assert_eq!(lower_bound(i64::min_value() + 1, 0, |x| -100 < x), -99);
+    assert_eq!(lower_bound(i64::min_value() + 1..0, |x| -100 < x), -99);
 }
 
 /// Bit all pettern enumeration iterator.
