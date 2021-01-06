@@ -367,6 +367,8 @@ mod test {
         assert_eq!(x.val(), 6);
         x -= Mint::new(1);
         assert_eq!(x.val(), 5);
+        x -= Mint::new(6);
+        assert_eq!(x.val(), 6);
     }
     #[test]
     fn test_modint_multi() {
@@ -394,6 +396,13 @@ mod test {
         assert_eq!(Mint::new(4).inv().val(), 2);
         assert_eq!(Mint::new(5).inv().val(), 3);
         assert_eq!(Mint::new(6).inv().val(), 6);
+    }
+    #[test]
+    fn test_modint_div() {
+        let mut x = Mint::new(2) / Mint::new(5);
+        assert_eq!(x.val(), 6);
+        x /= Mint::new(4);
+        assert_eq!(x.val(), 5);
     }
 
     #[test]
