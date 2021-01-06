@@ -1,4 +1,5 @@
 use std::marker::PhantomData;
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 /// Modulation trait
 pub trait Modulation: Clone + Copy + PartialEq + Eq {
@@ -114,7 +115,7 @@ impl<M: Modulation> num::One for ModInt<M> {
     }
 }
 
-impl<M: Modulation> std::ops::Neg for ModInt<M> {
+impl<M: Modulation> Neg for ModInt<M> {
     type Output = Self;
     #[inline]
     fn neg(self) -> Self {
@@ -124,8 +125,75 @@ impl<M: Modulation> std::ops::Neg for ModInt<M> {
         }
     }
 }
+impl<'a, M: Modulation> Neg for &'a ModInt<M> {
+    type Output = ModInt<M>;
+    #[inline]
+    fn neg(self) -> ModInt<M> {
+        -(*self)
+    }
+}
 
-impl<M: Modulation> std::ops::AddAssign for ModInt<M> {
+// from https://github.com/rust-lang/rust/blob/stable/library/core/src/internal_macros.rs
+// implements binary operators "&T op U", "T op &U", "&T op &U"
+// based on "T op U" where T and U are expected to be `Copy`able
+macro_rules! forward_ref_binop {
+    (impl $imp:ident, $method:ident) => {
+        impl<'a, M: Modulation> $imp<ModInt<M>> for &'a ModInt<M> {
+            type Output = <ModInt<M> as $imp<ModInt<M>>>::Output;
+            #[inline]
+            fn $method(self, other: ModInt<M>) -> <ModInt<M> as $imp<ModInt<M>>>::Output {
+                $imp::$method(*self, other)
+            }
+        }
+        impl<M: Modulation> $imp<&ModInt<M>> for ModInt<M> {
+            type Output = <ModInt<M> as $imp<ModInt<M>>>::Output;
+            #[inline]
+            fn $method(self, other: &ModInt<M>) -> <ModInt<M> as $imp<ModInt<M>>>::Output {
+                $imp::$method(self, *other)
+            }
+        }
+        impl<M: Modulation> $imp<&ModInt<M>> for &ModInt<M> {
+            type Output = <ModInt<M> as $imp<ModInt<M>>>::Output;
+            #[inline]
+            fn $method(self, other: &ModInt<M>) -> <ModInt<M> as $imp<ModInt<M>>>::Output {
+                $imp::$method(*self, *other)
+            }
+        }
+    };
+}
+// from https://github.com/rust-lang/rust/blob/stable/library/core/src/internal_macros.rs
+// implements "T op= &U", based on "T op= U"
+// where U is expected to be `Copy`able
+macro_rules! forward_ref_op_assign {
+    (impl $imp:ident, $method:ident) => {
+        impl<M: Modulation> $imp<&ModInt<M>> for ModInt<M> {
+            #[inline]
+            fn $method(&mut self, other: &ModInt<M>) {
+                $imp::$method(self, *other);
+            }
+        }
+    };
+}
+
+macro_rules! decl_ops_from_op_assign {
+    ($(impl $bi_tr:ident, $bi_me:ident from $as_tr:ident, $as_me:ident)*) => {
+        $(
+            impl<M: Modulation> $bi_tr for ModInt<M> {
+                type Output = Self;
+                #[inline]
+                fn $bi_me(self, rhs: Self) -> Self {
+                    let mut res = self;
+                    res.$as_me(rhs);
+                    res
+                }
+            }
+            forward_ref_op_assign! {impl $as_tr, $as_me}
+            forward_ref_binop! {impl $bi_tr, $bi_me}
+        )*
+    };
+}
+
+impl<M: Modulation> AddAssign for ModInt<M> {
     #[inline]
     fn add_assign(&mut self, rhs: Self) {
         self.x += rhs.x;
@@ -134,16 +202,7 @@ impl<M: Modulation> std::ops::AddAssign for ModInt<M> {
         }
     }
 }
-impl<M: Modulation> std::ops::Add for ModInt<M> {
-    type Output = Self;
-    #[inline]
-    fn add(self, rhs: Self) -> Self {
-        let mut res = self;
-        res += rhs;
-        res
-    }
-}
-impl<M: Modulation> std::ops::SubAssign for ModInt<M> {
+impl<M: Modulation> SubAssign for ModInt<M> {
     #[inline]
     fn sub_assign(&mut self, rhs: Self) {
         if self.x >= rhs.x {
@@ -153,30 +212,25 @@ impl<M: Modulation> std::ops::SubAssign for ModInt<M> {
         }
     }
 }
-impl<M: Modulation> std::ops::Sub for ModInt<M> {
-    type Output = Self;
-    #[inline]
-    fn sub(self, rhs: Self) -> Self {
-        let mut res = self;
-        res -= rhs;
-        res
-    }
-}
-impl<M: Modulation> std::ops::MulAssign for ModInt<M> {
+impl<M: Modulation> MulAssign for ModInt<M> {
     #[inline]
     fn mul_assign(&mut self, rhs: Self) {
         self.x *= rhs.x;
         self.x %= M::MOD;
     }
 }
-impl<M: Modulation> std::ops::Mul for ModInt<M> {
-    type Output = Self;
+impl<M: Modulation> DivAssign for ModInt<M> {
     #[inline]
-    fn mul(self, rhs: Self) -> Self {
-        let mut res = self;
-        res *= rhs;
-        res
+    fn div_assign(&mut self, rhs: Self) {
+        *self *= rhs.inv();
     }
+}
+
+decl_ops_from_op_assign! {
+    impl Add, add from AddAssign, add_assign
+    impl Sub, sub from SubAssign, sub_assign
+    impl Mul, mul from MulAssign, mul_assign
+    impl Div, div from DivAssign, div_assign
 }
 
 impl<M: Modulation> ModInt<M> {
