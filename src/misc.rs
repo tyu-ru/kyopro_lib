@@ -35,33 +35,37 @@ fn test_lower_bound2() {
     assert_eq!(lower_bound(i64::min_value() + 1, 0, |x| -100 < x), -99);
 }
 
+/// Bit all pettern enumeration iterator.
+/// # See also
+/// [`bit_pattern`]
 pub struct BitPattern {
-    i: u64,
-    mask: u64,
+    i: usize,
+    mask: usize,
     end: bool,
 }
-impl BitPattern {
-    #[inline]
-    pub fn new(n: usize) -> Self {
-        Self {
-            i: (1 << n) - 1,
-            mask: (1 << n) - 1,
-            end: n == 0,
-        }
-    }
-    #[inline]
-    pub fn with_mask(n: usize, mask: u64) -> Self {
-        let mask = mask & ((1 << n) - 1);
-        Self {
-            i: mask,
-            mask: mask,
-            end: n == 0,
-        }
+
+/// Bit all pettern enumeration iterator.
+/// Scan only the bit where `mask` stands.
+/// # Example
+/// ```
+/// # use kyopro_lib::misc::bit_pattern;
+/// let mut iter = bit_pattern(0b101);
+/// assert_eq!(iter.next(), Some(0b000));
+/// assert_eq!(iter.next(), Some(0b001));
+/// assert_eq!(iter.next(), Some(0b100));
+/// assert_eq!(iter.next(), Some(0b101));
+/// assert_eq!(iter.next(), None);
+/// ```
+pub fn bit_pattern(mask: usize) -> BitPattern {
+    BitPattern {
+        i: mask,
+        mask: mask,
+        end: false,
     }
 }
 
 impl Iterator for BitPattern {
-    type Item = u64;
+    type Item = usize;
     fn next(&mut self) -> Option<Self::Item> {
         if self.end {
             None
@@ -80,30 +84,42 @@ impl Iterator for BitPattern {
 #[cfg(test)]
 #[test]
 fn test_bit_pattern() {
-    assert_eq!(BitPattern::new(0).collect::<Vec<_>>(), []);
-    assert_eq!(BitPattern::new(1).collect::<Vec<_>>(), [0b0, 0b1]);
-    assert_eq!(
-        BitPattern::new(3).collect::<Vec<_>>(),
-        [0b000, 0b001, 0b010, 0b011, 0b100, 0b101, 0b110, 0b111]
+    use itertools::assert_equal;
+    assert_equal(bit_pattern(0b0), vec![0]);
+    assert_equal(bit_pattern(0b1), vec![0b0, 0b1]);
+    assert_equal(
+        bit_pattern(0b111),
+        vec![0b000, 0b001, 0b010, 0b011, 0b100, 0b101, 0b110, 0b111],
     );
-    assert_eq!(
-        BitPattern::with_mask(6, 0b10_1011).collect::<Vec<_>>(),
-        [
+    assert_equal(bit_pattern(0b101), vec![0b000, 0b001, 0b100, 0b101]);
+    assert_equal(
+        bit_pattern(0b10_1011),
+        vec![
             0b00_0000, 0b00_0001, 0b00_0010, 0b00_0011, 0b00_1000, 0b00_1001, 0b00_1010, 0b00_1011,
             0b10_0000, 0b10_0001, 0b10_0010, 0b10_0011, 0b10_1000, 0b10_1001, 0b10_1010, 0b10_1011,
-        ]
+        ],
     );
-    assert_eq!(BitPattern::with_mask(6, 0).collect::<Vec<_>>(), [0]);
 }
 
+/// Standing Bit enumeration iterator.
+/// # See also
+/// [`bit_iter`]
 pub struct BitIter {
-    i: u64,
+    i: usize,
 }
-impl BitIter {
-    #[inline]
-    pub fn new(x: u64) -> Self {
-        Self { i: x }
-    }
+/// Standing Bit enumeration iterator.
+/// # Example
+/// ```
+/// # use kyopro_lib::misc::bit_iter;
+/// let mut iter = bit_iter(0b11_0101);
+/// assert_eq!(iter.next(), Some(0));
+/// assert_eq!(iter.next(), Some(2));
+/// assert_eq!(iter.next(), Some(4));
+/// assert_eq!(iter.next(), Some(5));
+/// assert_eq!(iter.next(), None);
+/// ```
+pub fn bit_iter(x: usize) -> BitIter {
+    BitIter { i: x }
 }
 impl Iterator for BitIter {
     type Item = usize;
@@ -121,8 +137,9 @@ impl Iterator for BitIter {
 #[cfg(test)]
 #[test]
 fn test_bit_iter() {
-    assert_eq!(BitIter::new(0).collect::<Vec<_>>(), []);
-    assert_eq!(BitIter::new(0b0100_1101).collect::<Vec<_>>(), [0, 2, 3, 6]);
+    use itertools::assert_equal;
+    assert_equal(bit_iter(0), vec![]);
+    assert_equal(bit_iter(0b0100_1101), vec![0, 2, 3, 6]);
 }
 
 #[derive(PartialEq, PartialOrd)]
