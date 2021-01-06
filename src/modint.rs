@@ -1,19 +1,16 @@
-pub trait Modulation {
+use std::marker::PhantomData;
+
+/// Modulation trait
+pub trait Modulation: Clone + Copy + PartialEq + Eq {
     const MOD: u64;
 }
 
-#[derive(PartialEq, Eq)]
+/// Z/mZ field
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct ModInt<M: Modulation> {
     x: u64,
-    phantom: std::marker::PhantomData<M>,
+    phantom: PhantomData<M>,
 }
-
-impl<M: Modulation> Clone for ModInt<M> {
-    fn clone(&self) -> Self {
-        Self::new_uncheck(self.x)
-    }
-}
-impl<M: Modulation> Copy for ModInt<M> {}
 
 impl<M: Modulation> std::fmt::Display for ModInt<M> {
     fn fmt(&self, dest: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
@@ -31,7 +28,7 @@ impl<M: Modulation> ModInt<M> {
     pub fn new(x: u64) -> Self {
         Self {
             x: x % M::MOD,
-            phantom: std::marker::PhantomData,
+            phantom: PhantomData,
         }
     }
     #[inline]
@@ -43,14 +40,14 @@ impl<M: Modulation> ModInt<M> {
         };
         Self {
             x: x,
-            phantom: std::marker::PhantomData,
+            phantom: PhantomData,
         }
     }
     #[inline]
     pub fn new_uncheck(x: u64) -> Self {
         Self {
             x: x,
-            phantom: std::marker::PhantomData,
+            phantom: PhantomData,
         }
     }
     #[inline]
@@ -95,7 +92,7 @@ impl<M: Modulation> std::ops::Neg for ModInt<M> {
     fn neg(self) -> Self {
         Self {
             x: if self.x == 0 { 0 } else { M::MOD - self.x },
-            phantom: std::marker::PhantomData,
+            phantom: PhantomData,
         }
     }
 }
@@ -233,6 +230,7 @@ impl<M: Modulation> Factorial<M> {
 mod test {
     use super::*;
 
+    #[derive(Clone, Copy, PartialEq, Eq)]
     struct F;
     impl Modulation for F {
         const MOD: u64 = 7;
@@ -322,12 +320,14 @@ mod test {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct F1_000_000_007;
 impl Modulation for F1_000_000_007 {
     const MOD: u64 = 1_000_000_007;
 }
 pub type Mint1_000_000_007 = ModInt<F1_000_000_007>;
 
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct F998_244_353;
 impl Modulation for F998_244_353 {
     const MOD: u64 = 998_244_353;
