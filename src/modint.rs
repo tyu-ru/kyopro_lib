@@ -27,26 +27,21 @@ impl<M: Modulation> ModInt<M> {
     #[inline]
     pub fn new(x: u64) -> Self {
         Self {
-            x: x % M::MOD,
+            x: x.rem_euclid(M::MOD),
             phantom: PhantomData,
         }
     }
     #[inline]
     pub fn from_signed(x: i64) -> Self {
-        let x = if x >= 0 {
-            x as u64 % M::MOD
-        } else {
-            (M::MOD as i64 + x % M::MOD as i64) as u64
-        };
         Self {
-            x: x,
+            x: x.rem_euclid(M::MOD as i64) as u64,
             phantom: PhantomData,
         }
     }
     #[inline]
     pub fn new_uncheck(x: u64) -> Self {
         Self {
-            x: x,
+            x,
             phantom: PhantomData,
         }
     }
@@ -166,12 +161,8 @@ impl<M: Modulation> ModInt<M> {
     }
 
     pub fn inv(&self) -> Self {
-        let (mut x, _, _) = super::math::ext_gcd(self.x, M::MOD);
-        if x < 0 {
-            x %= M::MOD as i64;
-            x += M::MOD as i64;
-        }
-        Self::new(x as u64)
+        let (x, _, _) = super::math::ext_gcd(self.x, M::MOD);
+        Self::from(x)
     }
 
     pub fn gen_factorial(n: u64) -> Factorial<M> {
