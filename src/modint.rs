@@ -255,15 +255,31 @@ impl<'a, M: Modulation> std::iter::Product<&'a Self> for ModInt<M> {
 }
 
 impl<M: Modulation> ModInt<M> {
-    pub fn pow(&self, mut n: u64) -> Self {
+    pub fn pow<T: num::PrimInt + num::Unsigned>(&self, mut n: T) -> Self {
         let mut res = Self::new_uncheck(1);
         let mut d = *self;
-        while n != 0 {
-            if n & 1 != 0 {
+        while n != T::zero() {
+            if n & T::one() != T::zero() {
                 res *= d;
             }
             d *= d;
-            n >>= 1;
+            n = n >> 1;
+        }
+        res
+    }
+    pub fn powi<T: num::PrimInt + num::Signed>(&self, mut n: T) -> Self {
+        let mut res = Self::new_uncheck(1);
+        let mut d = *self;
+        if n.is_negative() {
+            d = d.inv();
+            n = n.abs();
+        }
+        while n != T::zero() {
+            if n & T::one() != T::zero() {
+                res *= d;
+            }
+            d *= d;
+            n = n >> 1;
         }
         res
     }
@@ -273,24 +289,24 @@ impl<M: Modulation> ModInt<M> {
         Self::from(x)
     }
 
-    pub fn gen_factorial(n: u64) -> Factorial<M> {
-        let n = n as usize;
+    pub fn gen_factorial<T: num::ToPrimitive + num::Unsigned>(n: T) -> Factorial<M> {
+        let n = n.to_usize().unwrap();
         let mut pos = vec![Self::new_uncheck(1); n + 1];
         let mut neg = vec![Self::new_uncheck(1); n + 1];
         for i in 1..n {
-            pos[i + 1] = pos[i] * Self::new(i as u64 + 1);
+            pos[i + 1] = pos[i] * Self::from(i + 1);
         }
         neg[n] = pos[n].inv();
         for i in (1..n).rev() {
-            neg[i] = neg[i + 1] * Self::new(i as u64 + 1);
+            neg[i] = neg[i + 1] * Self::from(i + 1);
         }
-
         Factorial { pos, neg }
     }
-    pub fn gen_inv(n: u64) -> Vec<Self> {
-        let mut res = vec![Self::new_uncheck(1); (n + 1) as usize];
+    pub fn gen_inv<T: num::ToPrimitive + num::Unsigned>(n: T) -> Vec<Self> {
+        let n = n.to_usize().unwrap();
+        let mut res = vec![Self::new_uncheck(1); n + 1];
         for i in 2..=n {
-            res[i as usize] = Self::new_uncheck(M::MOD - M::MOD / i) * res[(M::MOD % i) as usize];
+            res[i] = Self::new_uncheck(M::MOD - M::MOD / i as u64) * res[M::MOD as usize % i];
         }
         res
     }
@@ -301,27 +317,35 @@ pub struct Factorial<M: Modulation> {
     neg: Vec<ModInt<M>>,
 }
 impl<M: Modulation> Factorial<M> {
-    pub fn factorial(&self, n: u64) -> ModInt<M> {
-        self.pos[n as usize]
+    pub fn factorial<T: num::ToPrimitive + num::Unsigned>(&self, n: T) -> ModInt<M> {
+        self.pos[n.to_usize().unwrap()]
     }
 
-    pub fn permutation(&self, n: u64, r: u64) -> ModInt<M> {
+    pub fn permutation<T: num::ToPrimitive + num::Unsigned>(&self, n: T, r: T) -> ModInt<M> {
+        let n = n.to_usize().unwrap();
+        let r = r.to_usize().unwrap();
         if r > n {
             ModInt::new(0)
         } else {
-            self.pos[n as usize] * self.neg[(n - r) as usize]
+            self.pos[n] * self.neg[n - r]
         }
     }
 
-    pub fn binomial(&self, n: u64, r: u64) -> ModInt<M> {
+    pub fn binomial<T: num::ToPrimitive + num::Unsigned>(&self, n: T, r: T) -> ModInt<M> {
+        let n = n.to_usize().unwrap();
+        let r = r.to_usize().unwrap();
         if r > n {
             ModInt::new(0)
         } else {
-            self.pos[n as usize] * self.neg[r as usize] * self.neg[(n - r) as usize]
+            self.pos[n] * self.neg[r] * self.neg[n - r]
         }
     }
-    pub fn cmb_with_rep(&self, n: u64, r: u64) -> ModInt<M> {
-        self.binomial(n + r - 1, r)
+    pub fn cmb_with_rep<T: num::ToPrimitive + num::Unsigned + Clone>(
+        &self,
+        n: T,
+        r: T,
+    ) -> ModInt<M> {
+        self.binomial(n + r.clone() - T::one(), r)
     }
 }
 
@@ -379,14 +403,30 @@ mod test {
     }
     #[test]
     fn test_modint_pow() {
-        assert_eq!(Mint::new(3).pow(0).val(), 1);
-        assert_eq!(Mint::new(3).pow(1).val(), 3);
-        assert_eq!(Mint::new(3).pow(2).val(), 2);
-        assert_eq!(Mint::new(3).pow(3).val(), 6);
-        assert_eq!(Mint::new(3).pow(4).val(), 4);
-        assert_eq!(Mint::new(3).pow(5).val(), 5);
-        assert_eq!(Mint::new(3).pow(6).val(), 1);
-        assert_eq!(Mint::new(3).pow(7).val(), 3);
+        assert_eq!(Mint::new(3).pow(0u64).val(), 1);
+        assert_eq!(Mint::new(3).pow(1u64).val(), 3);
+        assert_eq!(Mint::new(3).pow(2u64).val(), 2);
+        assert_eq!(Mint::new(3).pow(3u64).val(), 6);
+        assert_eq!(Mint::new(3).pow(4u64).val(), 4);
+        assert_eq!(Mint::new(3).pow(5u64).val(), 5);
+        assert_eq!(Mint::new(3).pow(6u64).val(), 1);
+        assert_eq!(Mint::new(3).pow(7u64).val(), 3);
+
+        assert_eq!(Mint::new(3).pow(3u8).val(), 6);
+        assert_eq!(Mint::new(3).pow(3u16).val(), 6);
+        assert_eq!(Mint::new(3).pow(3u32).val(), 6);
+        assert_eq!(Mint::new(3).pow(3u64).val(), 6);
+        assert_eq!(Mint::new(3).pow(3usize).val(), 6);
+        assert_eq!(Mint::new(3).powi(3i8).val(), 6);
+        assert_eq!(Mint::new(3).powi(3i16).val(), 6);
+        assert_eq!(Mint::new(3).powi(3i32).val(), 6);
+        assert_eq!(Mint::new(3).powi(3i64).val(), 6);
+        assert_eq!(Mint::new(3).powi(3isize).val(), 6);
+        assert_eq!(Mint::new(3).powi(-2i8).val(), 4);
+        assert_eq!(Mint::new(3).powi(-2i16).val(), 4);
+        assert_eq!(Mint::new(3).powi(-2i32).val(), 4);
+        assert_eq!(Mint::new(3).powi(-2i64).val(), 4);
+        assert_eq!(Mint::new(3).powi(-2isize).val(), 4);
     }
     #[test]
     fn test_modint_inv() {
@@ -408,18 +448,52 @@ mod test {
     #[test]
     fn test_gen_inv() {
         assert_eq!(
-            Mint::gen_inv(6).iter().map(|x| x.val()).collect::<Vec<_>>(),
+            Mint::gen_inv(6u64)
+                .iter()
+                .map(|x| x.val())
+                .collect::<Vec<_>>(),
             &[1, 1, 4, 5, 2, 3, 6]
-        )
+        );
+        let _ = Mint::gen_inv(5u8);
+        let _ = Mint::gen_inv(5u16);
+        let _ = Mint::gen_inv(5u32);
+        let _ = Mint::gen_inv(5u64);
+        let _ = Mint::gen_inv(5usize);
     }
 
     #[test]
     fn test_modint_factorial() {
-        let fac = Mint::gen_factorial(5);
+        let fac = Mint::gen_factorial(5u64);
         let pos = fac.pos.iter().map(|x| x.val()).collect::<Vec<_>>();
         let neg = fac.neg.iter().map(|x| x.val()).collect::<Vec<_>>();
         assert_eq!(pos, &[1, 1, 2, 6, 3, 1]);
         assert_eq!(neg, &[1, 1, 4, 6, 5, 1]);
+
+        let _ = Mint::gen_factorial(5u8);
+        let _ = Mint::gen_factorial(5u16);
+        let _ = Mint::gen_factorial(5u32);
+        let _ = Mint::gen_factorial(5u64);
+        let _ = Mint::gen_factorial(5usize);
+        let _ = fac.factorial(5u8);
+        let _ = fac.factorial(5u16);
+        let _ = fac.factorial(5u32);
+        let _ = fac.factorial(5u64);
+        let _ = fac.factorial(5usize);
+        let _ = fac.permutation(5u8, 3u8);
+        let _ = fac.permutation(5u16, 3u16);
+        let _ = fac.permutation(5u32, 3u32);
+        let _ = fac.permutation(5u64, 3u64);
+        let _ = fac.permutation(5usize, 3usize);
+        let _ = fac.binomial(5u8, 3u8);
+        let _ = fac.binomial(5u16, 3u16);
+        let _ = fac.binomial(5u32, 3u32);
+        let _ = fac.binomial(5u64, 3u64);
+        let _ = fac.binomial(5usize, 3usize);
+        let _ = fac.cmb_with_rep(3u8, 1u8);
+        let _ = fac.cmb_with_rep(3u16, 1u16);
+        let _ = fac.cmb_with_rep(3u32, 1u32);
+        let _ = fac.cmb_with_rep(3u64, 1u64);
+        let _ = fac.cmb_with_rep(3usize, 1usize);
     }
 
     #[test]
