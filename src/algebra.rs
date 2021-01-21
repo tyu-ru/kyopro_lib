@@ -169,6 +169,27 @@ pub mod predefined {
         [a, b, { a.clone() * b.clone() }]
     );
     decl_monoid!(
+        "Bitwise Or monoid",
+        BitOr,
+        [num::Zero, std::ops::BitOr<Output = T>],
+        [{ T::zero() }],
+        [a, b, { a.clone() | b.clone() }]
+    );
+    decl_monoid!(
+        "Bitwise And monoid",
+        BitAnd,
+        [num::Zero, std::ops::Not<Output = T>, std::ops::BitAnd<Output = T>],
+        [{ !T::zero() }],
+        [a, b, { a.clone() & b.clone() }]
+    );
+    decl_monoid!(
+        "Bitwise Xor monoid",
+        BitXor,
+        [num::Zero, std::ops::BitXor<Output = T>],
+        [{ T::zero() }],
+        [a, b, { a.clone() ^ b.clone() }]
+    );
+    decl_monoid!(
         "Greatest common divisor moonoid",
         GCD,
         [num::Integer],
