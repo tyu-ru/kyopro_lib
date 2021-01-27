@@ -28,6 +28,7 @@ pub fn pow_mod(mut a: u64, mut x: u64, m: u64) -> u64 {
     res
 }
 
+#[cfg(test)]
 #[test]
 fn test_pow_mod() {
     assert_eq!(pow_mod(2, 0, 100), 1);
@@ -122,6 +123,7 @@ pub fn euler_totient_from_factorized(f: &[(u64, usize)]) -> u64 {
     res
 }
 
+#[cfg(test)]
 #[test]
 fn test_euler_totient() {
     itertools::assert_equal(
@@ -145,6 +147,7 @@ pub fn inv_mod(x: u64, m: u64) -> Option<u64> {
     Some(pow_mod(x, t - 1, m))
 }
 
+#[cfg(test)]
 #[test]
 fn test_inv_mod() {
     assert_eq!(inv_mod(0, 5), None);
@@ -166,7 +169,7 @@ fn test_inv_mod() {
 
 /// The smallest x,y pair satisfying `ax + by = gcd(a,b)` and gcd
 /// ```
-/// # use kyopro_lib::math::ext_gcd;
+/// # use klmath::ext_gcd;
 /// assert_eq!(ext_gcd(4,6), (-1,1,2));
 /// ```
 pub fn ext_gcd(a: u64, b: u64) -> (i64, i64, u64) {

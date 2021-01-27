@@ -1,8 +1,8 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use itertools::{izip, Itertools};
 
-use kyopro_lib::algebra::predefined as algebra;
-use kyopro_lib::segtree::*;
+use klalgebra::predefined as algebra;
+use klsegtree::*;
 
 fn gen_rnd_dat<T>(n: usize, range: std::ops::Range<T>) -> Vec<T>
 where
@@ -73,10 +73,8 @@ fn bench_lazy_segtree(c: &mut Criterion) {
     //     ),
     // );
 
-    let mut lst = LazySegTree::build_from_slice(
-        &gen_rnd_dat(n, -10000i64..10000),
-        predefined::RAQRAQ::new(),
-    );
+    let mut lst =
+        LazySegTree::build_from_slice(&gen_rnd_dat(n, -10000i64..10000), predefined::RAQRAQ::new());
     let q = izip!(
         gen_rnd_dat(n, -10000i64..10000i64),
         gen_rnd_dat2(n, 0..n),

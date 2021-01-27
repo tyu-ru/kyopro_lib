@@ -1,0 +1,14 @@
+[package]
+name = "klmisc"
+version = "0.1.0"
+authors = ["tyu-ru <tyuru.tw.cpp@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+num = "=0.2.1"
+num-traits = "=0.2.11"
+itertools = "=0.9.0"
+num-derive = "=0.3.0"
+

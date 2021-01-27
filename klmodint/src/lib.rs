@@ -285,7 +285,7 @@ impl<M: Modulation> ModInt<M> {
     }
 
     pub fn inv(&self) -> Self {
-        let (x, _, _) = super::math::ext_gcd(self.x, M::MOD);
+        let (x, _, _) = klmath::ext_gcd(self.x, M::MOD);
         Self::from(x)
     }
 

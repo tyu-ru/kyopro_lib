@@ -1,38 +1,24 @@
-[package]
-name = "kyopro_lib"
-version = "0.1.0"
-authors = ["tyu-ru <tyuru.tw.cpp@gmail.com>"]
-edition = "2018"
+#[package]
+#name = "kyopro_lib"
+#version = "0.1.0"
+#authors = ["tyu-ru <tyuru.tw.cpp@gmail.com>"]
+#edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[dependencies]
-num = "=0.2.1"
-num-traits = "=0.2.11"
-itertools = "=0.9.0"
-num-derive = "=0.3.0"
-#either = "=1.5.3"
-
-[dev-dependencies]
-rand = "=0.7.3"
-criterion = "=0.3.3"
-
-[package.metadata.cargo-equip.module-dependencies]
-"crate::algebra" = []
-"crate::fewnick_tree" = []
-"crate::grid" = []
-"crate::iterator" = []
-"crate::kitamsasa" = []
-"crate::math" = []
-"crate::misc" = []
-"crate::modint" = ["crate::math"]
-"crate::rle" = []
-"crate::segtree" = ["crate::algebra"]
-"crate::seive" = ["crate::rle"]
-"crate::string" = []
-"crate::tree" = []
-"crate::unionfind" = []
-
-[[bench]]
-name = "segtree"
-harness = false
+[workspace]
+members = [
+    "klalgebra",
+    "klfewnick_tree",
+    "klgrid",
+    "kliterator",
+    "klkitamasa",
+    "klmath",
+    "klmisc",
+    "klmodint",
+    "klrle",
+    "klsegtree",
+    "klsieve",
+    "klstring",
+    "klunionfind",
+]

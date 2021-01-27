@@ -1,4 +1,4 @@
-use super::algebra::*;
+use klalgebra::*;
 use std::ops::Range;
 use std::ops::RangeBounds;
 
@@ -79,12 +79,12 @@ fn test_range_include() {
 ///
 /// # Example
 /// ```
-/// # use kyopro_lib::segtree::*;
-/// # use kyopro_lib::algebra::{self, monoid};
+/// # use klsegtree::*;
+/// # use klalgebra::{self, monoid};
 /// // Range Minimum Query
 /// let mut st = SegTree::build_from_slice(&[2,4,3,1,5], monoid(std::i32::MAX, |&a, &b|std::cmp::min(a,b)));
 /// // Range Minimum Query (used declared monoid)
-/// let mut st = SegTree::build_from_slice(&[2,4,3,1,5], algebra::predefined::Min::new());
+/// let mut st = SegTree::build_from_slice(&[2,4,3,1,5], klalgebra::predefined::Min::new());
 ///
 /// assert_eq!(st.len(), 8);
 ///
@@ -379,14 +379,14 @@ fn test_segtree() {
     assert_eq!(st.query(0..4), 8);
     assert_eq!(st.as_slice(), &[3, -2, 3, 4, 5, 0, 0, 0]);
 
-    let st = SegTree::build_from_slice(&[1, 2, 3, 4], super::algebra::predefined::Add::new());
+    let st = SegTree::build_from_slice(&[1, 2, 3, 4], klalgebra::predefined::Add::new());
     assert_eq!(st.query(2..), 7);
 }
 
 #[cfg(test)]
 #[test]
 fn test_segtree_max_right() {
-    let st = SegTree::build_from_slice(&vec![1; 9], super::algebra::predefined::Add::new());
+    let st = SegTree::build_from_slice(&vec![1; 9], klalgebra::predefined::Add::new());
 
     assert_eq!(st.max_right(1, |&s| s <= 3), 4);
     // assert_eq!(st.max_right(1, |&s| s <= 8), 16); // non-recurcive
@@ -401,7 +401,7 @@ fn test_segtree_max_right() {
 #[cfg(test)]
 #[test]
 fn test_segtree_min_left() {
-    let st = SegTree::build_from_slice(&vec![1; 9], super::algebra::predefined::Add::new());
+    let st = SegTree::build_from_slice(&vec![1; 9], klalgebra::predefined::Add::new());
 
     assert_eq!(st.min_left(6, |&s| s <= 3), 3);
     assert_eq!(st.min_left(6, |&s| s <= 6), 0);
@@ -436,7 +436,7 @@ fn test_segtree_stress() {
     let d2 = Uniform::from(-(n as i64)..=n as i64);
     let mut rng = rand::thread_rng();
 
-    let mut st = SegTree::new(n, super::algebra::predefined::Add::new());
+    let mut st = SegTree::new(n, klalgebra::predefined::Add::new());
     let mut stup = vec![0; n];
 
     for _ in 0..n {
@@ -533,8 +533,8 @@ where
 ///
 /// # Example
 /// ```
-/// # use kyopro_lib::segtree::*;
-/// # use kyopro_lib::algebra::{self, monoid, semigroup};
+/// # use klsegtree::*;
+/// # use klalgebra::{self, monoid, semigroup};
 /// // Range Set Query & Range Minimum Query
 /// let mut lst = LazySegTree::build_from_slice(
 ///     &[2, 4, 3, 1, 5],
@@ -740,8 +740,8 @@ fn test_lazysegtree() {
     let mut lst = LazySegTree::build_from_slice(
         &[1, 2, 3, 4, 5],
         monoid_with_act(
-            super::algebra::predefined::Add::new(),
-            super::algebra::predefined::Add::new(),
+            klalgebra::predefined::Add::new(),
+            klalgebra::predefined::Add::new(),
             |&a, &b, l| a + b * l as i32,
         ),
     );
@@ -768,8 +768,8 @@ fn test_lazysegtree() {
 //     let mut lst = LazySegTree::build_from_slice(
 //         &vec![1; 9],
 //         monoid_with_act(
-//             super::algebra::predefined::Add::new(),
-//             super::algebra::predefined::Add::new(),
+//             klalgebra::predefined::Add::new(),
+//             klalgebra::predefined::Add::new(),
 //             |a: &i64, b: &i64, l| a + b * l as i64,
 //         ),
 //     );
@@ -795,8 +795,8 @@ fn test_lazysegtree() {
 //     let mut lst = LazySegTree::build_from_slice(
 //         &vec![1; 9],
 //         monoid_with_act(
-//             super::algebra::predefined::Add::new(),
-//             super::algebra::predefined::Add::new(),
+//             klalgebra::predefined::Add::new(),
+//             klalgebra::predefined::Add::new(),
 //             |a: &i64, b: &i64, l| a + b * l as i64,
 //         ),
 //     );
@@ -829,8 +829,8 @@ fn test_lazysegtree_stress() {
     let mut lst = LazySegTree::new(
         n,
         monoid_with_act(
-            super::algebra::predefined::Add::new(),
-            super::algebra::predefined::Add::new(),
+            klalgebra::predefined::Add::new(),
+            klalgebra::predefined::Add::new(),
             |&a: &i64, &b: &i64, l| a + b * l as i64,
         ),
     );
@@ -860,7 +860,6 @@ fn test_lazysegtree_stress() {
 
 /// Predefined monoids.
 pub mod predefined {
-    use super::super::algebra;
     use super::{Monoid, MonoidWithAct, Semigroup};
     use std::cmp::{max, min};
     use std::marker::PhantomData;
@@ -961,19 +960,19 @@ pub mod predefined {
 
     /// Range set query & range min query.
     pub struct RSQRMinQ<T: Clone + Ord + num::Bounded> {
-        m: algebra::predefined::Min<T>,
+        m: klalgebra::predefined::Min<T>,
         s: Set<T>,
     }
     impl<T: Clone + Ord + num::Bounded> RSQRMinQ<T> {
         pub fn new() -> Self {
             Self {
-                m: algebra::predefined::Min::new(),
+                m: klalgebra::predefined::Min::new(),
                 s: Set::new(),
             }
         }
     }
     impl<T: Clone + Ord + num::Bounded> MonoidWithAct for RSQRMinQ<T> {
-        type M = algebra::predefined::Min<T>;
+        type M = klalgebra::predefined::Min<T>;
         type S = Set<T>;
         fn m(&self) -> &Self::M {
             &self.m
@@ -996,7 +995,7 @@ pub mod predefined {
             + num::Bounded
             + num::FromPrimitive,
     {
-        m: algebra::predefined::Add<T>,
+        m: klalgebra::predefined::Add<T>,
         s: Set<T>,
     }
     impl<T> RSQRAQ<T>
@@ -1010,7 +1009,7 @@ pub mod predefined {
     {
         pub fn new() -> Self {
             Self {
-                m: algebra::predefined::Add::new(),
+                m: klalgebra::predefined::Add::new(),
                 s: Set::new(),
             }
         }
@@ -1024,7 +1023,7 @@ pub mod predefined {
             + num::Bounded
             + num::FromPrimitive,
     {
-        type M = algebra::predefined::Add<T>;
+        type M = klalgebra::predefined::Add<T>;
         type S = Set<T>;
 
         fn m(&self) -> &Self::M {
@@ -1043,7 +1042,7 @@ pub mod predefined {
     where
         T: Clone + std::ops::Add + std::ops::Mul<Output = T> + num::Zero + num::FromPrimitive,
     {
-        m: algebra::predefined::Add<T>,
+        m: klalgebra::predefined::Add<T>,
     }
     impl<T> RAQRAQ<T>
     where
@@ -1051,7 +1050,7 @@ pub mod predefined {
     {
         pub fn new() -> Self {
             Self {
-                m: algebra::predefined::Add::new(),
+                m: klalgebra::predefined::Add::new(),
             }
         }
     }
@@ -1059,8 +1058,8 @@ pub mod predefined {
     where
         T: Clone + std::ops::Add + std::ops::Mul<Output = T> + num::Zero + num::FromPrimitive,
     {
-        type M = algebra::predefined::Add<T>;
-        type S = algebra::predefined::Add<T>;
+        type M = klalgebra::predefined::Add<T>;
+        type S = klalgebra::predefined::Add<T>;
 
         fn m(&self) -> &Self::M {
             &self.m

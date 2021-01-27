@@ -52,7 +52,7 @@ pub struct BitPattern {
 /// Scan only the bit where `mask` stands.
 /// # Example
 /// ```
-/// # use kyopro_lib::misc::bit_pattern;
+/// # use klmisc::bit_pattern;
 /// let mut iter = bit_pattern(0b101);
 /// assert_eq!(iter.next(), Some(0b000));
 /// assert_eq!(iter.next(), Some(0b001));
@@ -114,7 +114,7 @@ pub struct BitIter {
 /// Standing Bit enumeration iterator.
 /// # Example
 /// ```
-/// # use kyopro_lib::misc::bit_iter;
+/// # use klmisc::bit_iter;
 /// let mut iter = bit_iter(0b11_0101);
 /// assert_eq!(iter.next(), Some(0));
 /// assert_eq!(iter.next(), Some(2));

@@ -1,4 +1,4 @@
-use super::rle::RLE;
+use klrle::RLE;
 
 pub struct Sieve {
     v: Vec<u64>,
