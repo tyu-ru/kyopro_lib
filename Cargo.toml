@@ -21,4 +21,5 @@ members = [
     "klsieve",
     "klstring",
     "klunionfind",
+    "tests/equip_test",
 ]
