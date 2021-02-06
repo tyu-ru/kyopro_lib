@@ -12,6 +12,7 @@ klfewnick_tree = { path = "../../klfewnick_tree/" }
 klgrid = { path = "../../klgrid/" }
 kliterator = { path = "../../kliterator/" }
 klkitamasa = { path = "../../klkitamasa/" }
+klmacro = { path = "../../klmacro" }
 klmath = { path = "../../klmath/" }
 klmisc = { path = "../../klmisc/" }
 klmodint = { path = "../../klmodint/" }

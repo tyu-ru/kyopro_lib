@@ -13,6 +13,7 @@ members = [
     "klgrid",
     "kliterator",
     "klkitamasa",
+    "klmacro",
     "klmath",
     "klmisc",
     "klmodint",

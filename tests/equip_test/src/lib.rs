@@ -13,6 +13,8 @@ fn test_equip_remove_tests() {
         // system didn't install cargo-equip
         return;
     }
+
+    // cargo equip --resolve-cfgs --remove docs comments --rustfmt --exclude-atcoder-crates --check
     let e = std::process::Command::new("cargo")
         .arg("equip")
         .arg("--resolve-cfgs")

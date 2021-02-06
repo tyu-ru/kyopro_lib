@@ -10,6 +10,8 @@ fn main() {
     #[allow(unused_imports)]
     use klkitamasa;
     #[allow(unused_imports)]
+    use klmacro;
+    #[allow(unused_imports)]
     use klmath;
     #[allow(unused_imports)]
     use klmisc;
