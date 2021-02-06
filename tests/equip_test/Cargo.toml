@@ -19,9 +19,9 @@ klmodint = { path = "../../klmodint/" }
 klrle = { path = "../../klrle/" }
 klsegtree = { path = "../../klsegtree/" }
 klsieve = { path = "../../klsieve/" }
+klstdfeature = { path = "../../klstdfeature/" }
 klstring = { path = "../../klstring/" }
 klunionfind = { path = "../../klunionfind/" }
 num = "=0.2.1"
-num-traits = "=0.2.11"
 itertools = "=0.9.0"
 num-derive = "=0.3.0"

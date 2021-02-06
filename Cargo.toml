@@ -20,6 +20,7 @@ members = [
     "klrle",
     "klsegtree",
     "klsieve",
+    "klstdfeature",
     "klstring",
     "klunionfind",
     "tests/equip_test",

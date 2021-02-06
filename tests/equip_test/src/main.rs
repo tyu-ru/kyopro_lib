@@ -24,6 +24,8 @@ fn main() {
     #[allow(unused_imports)]
     use klsieve;
     #[allow(unused_imports)]
+    use klstdfeature;
+    #[allow(unused_imports)]
     use klstring;
     #[allow(unused_imports)]
     use klunionfind;
