@@ -1038,13 +1038,13 @@ pub mod predefined {
     }
 
     /// Range add query & range add query.
-    pub struct RAQRAQ<T>
+    pub struct RAQRSQ<T>
     where
         T: Clone + std::ops::Add + std::ops::Mul<Output = T> + num::Zero + num::FromPrimitive,
     {
         m: klalgebra::predefined::Add<T>,
     }
-    impl<T> RAQRAQ<T>
+    impl<T> RAQRSQ<T>
     where
         T: Clone + std::ops::Add + std::ops::Mul<Output = T> + num::Zero + num::FromPrimitive,
     {
@@ -1054,7 +1054,7 @@ pub mod predefined {
             }
         }
     }
-    impl<T> MonoidWithAct for RAQRAQ<T>
+    impl<T> MonoidWithAct for RAQRSQ<T>
     where
         T: Clone + std::ops::Add + std::ops::Mul<Output = T> + num::Zero + num::FromPrimitive,
     {
@@ -1070,6 +1070,59 @@ pub mod predefined {
 
         fn act(&self, lhs: &T, rhs: &T, len: usize) -> T {
             lhs.clone() + rhs.clone() * T::from_usize(len).unwrap()
+        }
+    }
+
+    /// Range add query & range min query.
+    pub struct RAQRMinQ<T: Clone + Ord + num::Bounded + num::Zero> {
+        m: klalgebra::predefined::Min<T>,
+        s: klalgebra::predefined::Add<T>,
+    }
+    impl<T: Clone + Ord + num::Bounded + num::Zero> RAQRMinQ<T> {
+        pub fn new() -> Self {
+            Self {
+                m: klalgebra::predefined::Min::new(),
+                s: klalgebra::predefined::Add::new(),
+            }
+        }
+    }
+    impl<T: Clone + Ord + num::Bounded + num::Zero> MonoidWithAct for RAQRMinQ<T> {
+        type M = klalgebra::predefined::Min<T>;
+        type S = klalgebra::predefined::Add<T>;
+        fn m(&self) -> &Self::M {
+            &self.m
+        }
+        fn s(&self) -> &Self::S {
+            &self.s
+        }
+        fn act(&self, lhs: &T, rhs: &T, _: usize) -> T {
+            lhs.clone() + rhs.clone()
+        }
+    }
+    /// Range add query & range max query.
+    pub struct RAQRMaxQ<T: Clone + Ord + num::Bounded + num::Zero> {
+        m: klalgebra::predefined::Max<T>,
+        s: klalgebra::predefined::Add<T>,
+    }
+    impl<T: Clone + Ord + num::Bounded + num::Zero> RAQRMaxQ<T> {
+        pub fn new() -> Self {
+            Self {
+                m: klalgebra::predefined::Max::new(),
+                s: klalgebra::predefined::Add::new(),
+            }
+        }
+    }
+    impl<T: Clone + Ord + num::Bounded + num::Zero> MonoidWithAct for RAQRMaxQ<T> {
+        type M = klalgebra::predefined::Max<T>;
+        type S = klalgebra::predefined::Add<T>;
+        fn m(&self) -> &Self::M {
+            &self.m
+        }
+        fn s(&self) -> &Self::S {
+            &self.s
+        }
+        fn act(&self, lhs: &T, rhs: &T, _: usize) -> T {
+            lhs.clone() + rhs.clone()
         }
     }
 }

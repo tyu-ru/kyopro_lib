@@ -74,7 +74,7 @@ fn bench_lazy_segtree(c: &mut Criterion) {
     // );
 
     let mut lst =
-        LazySegTree::build_from_slice(&gen_rnd_dat(n, -10000i64..10000), predefined::RAQRAQ::new());
+        LazySegTree::build_from_slice(&gen_rnd_dat(n, -10000i64..10000), predefined::RAQRSQ::new());
     let q = izip!(
         gen_rnd_dat(n, -10000i64..10000i64),
         gen_rnd_dat2(n, 0..n),
