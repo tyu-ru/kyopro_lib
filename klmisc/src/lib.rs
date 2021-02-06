@@ -42,6 +42,7 @@ fn test_lower_bound2() {
 /// Bit all pettern enumeration iterator.
 /// # See also
 /// [`bit_pattern`]
+#[derive(Clone)]
 pub struct BitPattern {
     i: usize,
     mask: usize,
@@ -108,6 +109,7 @@ fn test_bit_pattern() {
 /// Standing Bit enumeration iterator.
 /// # See also
 /// [`bit_iter`]
+#[derive(Clone)]
 pub struct BitIter {
     i: usize,
 }
