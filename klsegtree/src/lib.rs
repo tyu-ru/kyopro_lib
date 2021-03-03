@@ -924,7 +924,7 @@ pub mod predefined {
         MaxWihtLeftIndex,
         (T, usize),
         [num::Bounded, Ord],
-        [{ (T::max_value(), 0) }],
+        [{ (T::min_value(), 0) }],
         [a, b, {
             if a.0 != b.0 {
                 max(a, b).clone()
