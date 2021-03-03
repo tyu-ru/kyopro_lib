@@ -1,0 +1,13 @@
+[package]
+name = "klinputmarker"
+version = "0.1.0"
+authors = ["tyu-ru <tyuru.tw.cpp@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+proconio = { version = "=0.3.6", features = ["derive"] }
+num = "=0.2.1"
+num-rational = "=0.2.4"
+

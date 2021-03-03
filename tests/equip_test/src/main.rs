@@ -6,6 +6,8 @@ fn main() {
     #[allow(unused_imports)]
     use klgrid;
     #[allow(unused_imports)]
+    use klinputmarker;
+    #[allow(unused_imports)]
     use kliterator;
     #[allow(unused_imports)]
     use klkitamasa;
