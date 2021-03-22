@@ -11,6 +11,7 @@ members = [
     "klalgebra",
     "klfewnick_tree",
     "klgrid",
+    "klinftype",
     "klinputmarker",
     "kliterator",
     "klkitamasa",
