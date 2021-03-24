@@ -10,6 +10,7 @@ edition = "2018"
 klalgebra = { path = "../../klalgebra/" }
 klfewnick_tree = { path = "../../klfewnick_tree/" }
 klgrid = { path = "../../klgrid/" }
+klhld = { path = "../../klhld/" }
 klinftype = { path="../../klinftype" }
 klinputmarker = { path="../../klinputmarker" }
 kliterator = { path = "../../kliterator/" }

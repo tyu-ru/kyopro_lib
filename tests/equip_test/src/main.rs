@@ -6,6 +6,8 @@ fn main() {
     #[allow(unused_imports)]
     use klgrid;
     #[allow(unused_imports)]
+    use klhld;
+    #[allow(unused_imports)]
     use klinftype;
     #[allow(unused_imports)]
     use klinputmarker;
