@@ -9,6 +9,7 @@ edition = "2018"
 [dependencies]
 klalgebra = { path = "../../klalgebra/" }
 klfewnick_tree = { path = "../../klfewnick_tree/" }
+klflow = { path = "../../klflow/" }
 klgrid = { path = "../../klgrid/" }
 klhld = { path = "../../klhld/" }
 klinftype = { path="../../klinftype" }

@@ -4,6 +4,8 @@ fn main() {
     #[allow(unused_imports)]
     use klfewnick_tree;
     #[allow(unused_imports)]
+    use klflow;
+    #[allow(unused_imports)]
     use klgrid;
     #[allow(unused_imports)]
     use klhld;
