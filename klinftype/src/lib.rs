@@ -1,5 +1,4 @@
-
-#[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub enum InfType<T> {
     NegInfinity,
     Finit(T),
