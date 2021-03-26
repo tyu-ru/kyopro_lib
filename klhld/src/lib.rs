@@ -96,14 +96,14 @@ impl HLD {
 
     fn path_query_impl<T, F1, F2>(
         &self,
-        sequence_query: &F1,
+        sequence_query: &mut F1,
         marge: &F2,
         mut v: usize,
         mut u: usize,
     ) -> (usize, usize, T)
     where
         T: Clone,
-        F1: Fn(std::ops::RangeInclusive<usize>) -> T,
+        F1: FnMut(std::ops::RangeInclusive<usize>) -> T,
         F2: Fn(&T, &T) -> T,
     {
         if self.depth[v] > self.depth[u] {
@@ -131,17 +131,17 @@ impl HLD {
 
     pub fn path_query<T, F1, F2>(
         &self,
-        sequence_query: F1,
+        mut sequence_query: F1,
         marge: F2,
         v: usize,
         u: usize,
     ) -> (usize, T)
     where
         T: Clone,
-        F1: Fn(std::ops::RangeInclusive<usize>) -> T,
+        F1: FnMut(std::ops::RangeInclusive<usize>) -> T,
         F2: Fn(&T, &T) -> T,
     {
-        let (v, u, mut res) = self.path_query_impl(&sequence_query, &marge, v, u);
+        let (v, u, mut res) = self.path_query_impl(&mut sequence_query, &marge, v, u);
         let x = sequence_query(self.vertex_to_index[v]..=self.vertex_to_index[u]);
         res = marge(&res, &x);
         (v, res)
@@ -149,20 +149,20 @@ impl HLD {
 
     pub fn path_query_with_edge_value<T, F1, F2>(
         &self,
-        sequence_query: F1,
+        mut sequence_query: F1,
         marge: F2,
         v: usize,
         u: usize,
     ) -> (usize, Option<T>)
     where
         T: Clone,
-        F1: Fn(std::ops::RangeInclusive<usize>) -> T,
+        F1: FnMut(std::ops::RangeInclusive<usize>) -> T,
         F2: Fn(&T, &T) -> T,
     {
         if v == u {
             return (v, None);
         }
-        let (v, u, mut res) = self.path_query_impl(&sequence_query, &marge, v, u);
+        let (v, u, mut res) = self.path_query_impl(&mut sequence_query, &marge, v, u);
         if v != u {
             let x = sequence_query(self.vertex_to_index[v] + 1..=self.vertex_to_index[u]);
             res = marge(&res, &x);
