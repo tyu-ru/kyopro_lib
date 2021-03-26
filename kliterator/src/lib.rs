@@ -75,6 +75,28 @@ pub trait MyIterator: Iterator {
 
 impl<T: ?Sized> MyIterator for T where T: Iterator {}
 
+pub trait MyPeekable {
+    type I: Iterator;
+    fn next_if(
+        &mut self,
+        func: impl FnOnce(&<Self::I as Iterator>::Item) -> bool,
+    ) -> Option<<Self::I as Iterator>::Item>;
+}
+
+impl<I: Iterator> MyPeekable for std::iter::Peekable<I> {
+    type I = I;
+    fn next_if(
+        &mut self,
+        func: impl FnOnce(&<I as Iterator>::Item) -> bool,
+    ) -> Option<<I as Iterator>::Item> {
+        if matches!(self.peek(), Some(item) if func(item)) {
+            self.next()
+        } else {
+            None
+        }
+    }
+}
+
 pub struct TuplePermutations<I, T>
 where
     I: Iterator<Item = T::Item>,
@@ -101,7 +123,7 @@ where
 
 #[cfg(test)]
 mod test {
-    use super::MyIterator;
+    use super::*;
 
     #[test]
     fn test_position_eq() {
@@ -140,6 +162,14 @@ mod test {
     fn test_max_unwrap_panic() {
         let a: Vec<i32> = vec![];
         a.iter().max_unwrap();
+    }
+
+    #[test]
+    fn test_next_if() {
+        let mut it = (0..10).peekable();
+        assert_eq!(it.next_if(|&x| x == 0), Some(0));
+        assert_eq!(it.next_if(|&x| x == 0), None);
+        assert_eq!(it.next(), Some(1));
     }
 
     #[test]
