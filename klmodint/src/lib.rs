@@ -75,18 +75,16 @@ macro_rules! def_from_trait {
             }
         }
     };
+    (u, $($t: ty) +) => {
+        $(def_from_trait!{u, $t})*
+    };
+    (i, $($t: ty) +) => {
+        $(def_from_trait!{i, $t})*
+    };
 }
 
-def_from_trait!(u, u8);
-def_from_trait!(u, u16);
-def_from_trait!(u, u32);
-def_from_trait!(u, u64);
-def_from_trait!(u, usize);
-def_from_trait!(i, i8);
-def_from_trait!(i, i16);
-def_from_trait!(i, i32);
-def_from_trait!(i, i64);
-def_from_trait!(i, isize);
+def_from_trait!(u, u8 u16 u32 u64 u128 usize);
+def_from_trait!(i, i8 i16 i32 i64 i128 isize);
 
 impl<M: Modulation> num::FromPrimitive for ModInt<M> {
     fn from_i64(n: i64) -> Option<Self> {
