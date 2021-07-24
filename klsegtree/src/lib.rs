@@ -985,6 +985,33 @@ pub mod predefined {
         }
     }
 
+    /// Range set query & range max query.
+    pub struct RSQRMaxQ<T: Clone + Ord + num::Bounded> {
+        m: klalgebra::predefined::Max<T>,
+        s: Set<T>,
+    }
+    impl<T: Clone + Ord + num::Bounded> RSQRMaxQ<T> {
+        pub fn new() -> Self {
+            Self {
+                m: klalgebra::predefined::Max::new(),
+                s: Set::new(),
+            }
+        }
+    }
+    impl<T: Clone + Ord + num::Bounded> MonoidWithAct for RSQRMaxQ<T> {
+        type M = klalgebra::predefined::Max<T>;
+        type S = Set<T>;
+        fn m(&self) -> &Self::M {
+            &self.m
+        }
+        fn s(&self) -> &Self::S {
+            &self.s
+        }
+        fn act(&self, _: &T, rhs: &T, _: usize) -> T {
+            rhs.clone()
+        }
+    }
+
     /// Range set query & range add query
     pub struct RSQRAQ<T>
     where
