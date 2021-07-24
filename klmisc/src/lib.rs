@@ -165,3 +165,9 @@ pub fn atcg_to_index(c: char) -> usize {
         _ => 3,
     }
 }
+
+pub fn duplicate_vec<T: Clone>(v: Vec<T>) -> Vec<T> {
+    let mut res = v.clone();
+    res.extend(v);
+    res
+}
