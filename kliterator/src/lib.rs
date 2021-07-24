@@ -1,5 +1,5 @@
 use itertools::{traits::HomogeneousTuple, Itertools};
-use std::iter::{DoubleEndedIterator, ExactSizeIterator};
+use std::iter::{once, DoubleEndedIterator, ExactSizeIterator};
 use std::marker::PhantomData;
 
 /// My iterator trait
@@ -119,6 +119,10 @@ where
             .next()
             .and_then(|v| T::collect_from_iter_no_buf(v.into_iter()))
     }
+}
+
+pub fn sandwich<T>(l: T, m: impl Iterator<Item = T>, r: T) -> impl Iterator<Item = T> {
+    once(l).chain(m).chain(once(r))
 }
 
 #[cfg(test)]
