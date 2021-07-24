@@ -36,6 +36,24 @@ fn test_digit_vec() {
     assert_eq!(x, vec![1u64, 2, 3]);
 }
 
+macro_rules! decl_alphabets {
+    ($t:ty, $zero:expr) => {
+        impl Readable for $t {
+            type Output = Vec<usize>;
+            fn read<R: std::io::BufRead, S: proconio::source::Source<R>>(
+                source: &mut S,
+            ) -> Self::Output {
+                input! { from source, x: proconio::marker::Bytes }
+                x.into_iter().map(|c| (c - $zero) as usize).collect()
+            }
+        }
+    };
+}
+pub struct UpperAlphabets;
+pub struct LowerAlphabets;
+decl_alphabets!(UpperAlphabets, b'A');
+decl_alphabets!(LowerAlphabets, b'a');
+
 pub struct Rational64FromDecimal;
 
 impl Readable for Rational64FromDecimal {
