@@ -430,11 +430,13 @@ fn test_segtree_indexed_initialize() {
 #[cfg(test)]
 #[test]
 fn test_segtree_stress() {
-    use rand::distributions::{Distribution, Uniform};
+    use std::convert::TryFrom;
+
+    use rand::distr::{Distribution, Uniform};
     let n = 10_000;
-    let d = Uniform::from(0..n);
-    let d2 = Uniform::from(-(n as i64)..=n as i64);
-    let mut rng = rand::thread_rng();
+    let d = Uniform::try_from(0..n).unwrap();
+    let d2 = Uniform::try_from(-(n as i64)..=n as i64).unwrap();
+    let mut rng = rand::rng();
 
     let mut st = SegTree::new(n, klalgebra::predefined::Add::new());
     let mut stup = vec![0; n];
@@ -820,11 +822,13 @@ fn test_lazysegtree() {
 #[cfg(test)]
 #[test]
 fn test_lazysegtree_stress() {
-    use rand::distributions::{Distribution, Uniform};
+    use std::convert::TryFrom;
+
+    use rand::distr::{Distribution, Uniform};
     let n = 10_000;
-    let d = Uniform::from(0..n);
-    let d2 = Uniform::from(-(n as i64)..=n as i64);
-    let mut rng = rand::thread_rng();
+    let d = Uniform::try_from(0..n).unwrap();
+    let d2 = Uniform::try_from(-(n as i64)..=n as i64).unwrap();
+    let mut rng = rand::rng();
 
     let mut lst = LazySegTree::new(
         n,

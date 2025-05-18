@@ -24,7 +24,7 @@ fn test_insertion_sort() {
 
 fn mid3<T, F: FnMut(&T, &T) -> bool>(a: &mut [T], rng: &mut SmallRng, is_less: &mut F) {
     let m = a.len() - 1;
-    let pb = rng.gen_range(1, m);
+    let pb = rng.gen_range(1..m);
     if is_less(&a[0], &a[m]) {
         a.swap(m, 0);
     }
@@ -224,7 +224,7 @@ mod test_select_nth_unstable {
         for _ in 0..100 {
             let mut v = (0..100).collect::<Vec<_>>();
             v.shuffle(&mut thread_rng());
-            let idx = thread_rng().gen_range(0, 100);
+            let idx = thread_rng().gen_range(0..100);
             {
                 let (l, m, r) = select_nth_unstable1(&mut v, idx);
                 assert!(l.iter().all(|x| *x < *m));
