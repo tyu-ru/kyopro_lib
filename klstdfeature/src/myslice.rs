@@ -1,5 +1,3 @@
-use rand::{prelude::*, rngs::SmallRng, SeedableRng};
-
 pub fn insertion_sort<T, F: FnMut(&T, &T) -> bool>(a: &mut [T], is_less: &mut F) {
     // sorted a[..i]
     for mut i in 1..a.len() {
