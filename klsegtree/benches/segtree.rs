@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 use criterion::{criterion_group, criterion_main, Criterion};
 use itertools::{izip, Itertools};
 
@@ -6,11 +8,11 @@ use klsegtree::*;
 
 fn gen_rnd_dat<T>(n: usize, range: std::ops::Range<T>) -> Vec<T>
 where
-    T: rand::distributions::uniform::SampleUniform,
+    T: rand::distr::uniform::SampleUniform,
 {
-    use rand::distributions::{Distribution, Uniform};
-    let d = Uniform::from(range);
-    let mut rng = rand::thread_rng();
+    use rand::distr::{Distribution, Uniform};
+    let d = Uniform::try_from(range).unwrap();
+    let mut rng = rand::rng();
     (0..n).map(|_| d.sample(&mut rng)).collect()
 }
 fn gen_rnd_dat2(n: usize, range: std::ops::Range<usize>) -> Vec<(usize, usize)> {
